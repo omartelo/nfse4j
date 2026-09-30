@@ -10,6 +10,7 @@ import io.github.omartelo.nfse4j.core.xml.XmlSigner;
 import io.github.omartelo.nfse4j.core.xml.dps.Dps;
 import io.github.omartelo.nfse4j.core.xml.dps.DpsXmlBuilder;
 import io.github.omartelo.nfse4j.core.xml.evento.CancelamentoNfse;
+import io.github.omartelo.nfse4j.core.xml.evento.PedidoRegistroEvento;
 import io.github.omartelo.nfse4j.core.xml.evento.PedidoRegistroEventoXmlBuilder;
 import java.util.List;
 
@@ -63,15 +64,23 @@ public final class ContribuinteService {
     }
 
     public NfseHttpResponse cancelar(CancelamentoNfse cancelamento) {
-        String xml = eventoXmlBuilder.buildCancelamento(context.ambiente().tipoAmbiente(), cancelamento);
+        return registrar(cancelamento, "cancelar NFS-e");
+    }
+
+    public NfseHttpResponse registrarEvento(PedidoRegistroEvento evento) {
+        return registrar(evento, "registrar evento de NFS-e");
+    }
+
+    private NfseHttpResponse registrar(PedidoRegistroEvento evento, String operacao) {
+        String xml = eventoXmlBuilder.build(context.ambiente().tipoAmbiente(), evento);
         String signedXml = XmlSigner.signElement(
             xml,
             "infPedReg",
             context.certificado()
-                .orElseThrow(() -> new ContribuinteServiceException("Certificado A1 e obrigatorio para cancelar NFS-e."))
+                .orElseThrow(() -> new ContribuinteServiceException("Certificado A1 e obrigatorio para " + operacao + "."))
         );
         exigirConformeXsd("Pedido de registro de evento", XmlSchemaValidator.validarPedidoRegistroEvento(signedXml));
-        return sefinClient.registrarEventoXml(cancelamento.chaveAcesso(), signedXml);
+        return sefinClient.registrarEventoXml(evento.chaveAcesso(), signedXml);
     }
 
     public NfseHttpResponse consultarNfse(String chaveAcesso) {

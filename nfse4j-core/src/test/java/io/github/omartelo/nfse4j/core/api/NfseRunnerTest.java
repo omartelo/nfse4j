@@ -11,6 +11,7 @@ import io.github.omartelo.nfse4j.core.api.EmitirNfseRequest.TomadorRequest;
 import io.github.omartelo.nfse4j.core.api.EmitirNfseRequest.TributacaoRequest;
 import io.github.omartelo.nfse4j.core.certificate.CertificadoA1;
 import io.github.omartelo.nfse4j.core.certificate.TestPkcs12Factory;
+import io.github.omartelo.nfse4j.core.xml.evento.TipoManifestacao;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ class NfseRunnerTest {
 
     private static final char[] SENHA = "test-pass".toCharArray();
     private static final String CNPJ = "12345678000199";
+    private static final String CHAVE_ACESSO = "31298062112223330001810000000000000012345678901234";
 
     private static EmitirNfseRequest request() {
         return new EmitirNfseRequest(
@@ -64,6 +66,34 @@ class NfseRunnerTest {
             () -> NfseRunner.cancelar("CHAVE", null, 1, "1", "motivo",
                 Ambiente.PRODUCAO, certValido(dir), false));
         assertTrue(ex.getMessage().contains("PRODUCAO"));
+    }
+
+    @Test
+    void manifestarEmProducaoSemConfirmacaoFalhaAntesDaRede(@TempDir Path dir) throws Exception {
+        var ex = assertThrows(IllegalStateException.class,
+            () -> NfseRunner.manifestar(CHAVE_ACESSO, null, TipoManifestacao.CONFIRMACAO_TOMADOR, null, null,
+                Ambiente.PRODUCAO, certValido(dir), false));
+        assertTrue(ex.getMessage().contains("PRODUCAO"));
+    }
+
+    @Test
+    void solicitarAnaliseFiscalEmProducaoSemConfirmacaoFalhaAntesDaRede(@TempDir Path dir) throws Exception {
+        var ex = assertThrows(IllegalStateException.class,
+            () -> NfseRunner.solicitarAnaliseFiscalCancelamento(CHAVE_ACESSO, null, "1",
+                "Erro na emissao da nota fiscal", Ambiente.PRODUCAO, certValido(dir), false));
+        assertTrue(ex.getMessage().contains("PRODUCAO"));
+    }
+
+    @Test
+    void manifestarComCertificadoExpiradoFalha(@TempDir Path dir) throws Exception {
+        Path p = dir.resolve("expirado.p12");
+        TestPkcs12Factory.createExpired(p, SENHA, "1", CNPJ);
+        CertificadoA1 expirado = CertificadoA1.fromFile(p, SENHA);
+
+        var ex = assertThrows(IllegalStateException.class,
+            () -> NfseRunner.manifestar(CHAVE_ACESSO, null, TipoManifestacao.CONFIRMACAO_TOMADOR, null, null,
+                Ambiente.HOMOLOGACAO, expirado, false));
+        assertTrue(ex.getMessage().contains("validade"));
     }
 
     @Test
