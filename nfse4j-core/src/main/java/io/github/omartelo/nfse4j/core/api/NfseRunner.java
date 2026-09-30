@@ -9,6 +9,7 @@ import io.github.omartelo.nfse4j.core.http.DistribuicaoDfeException;
 import io.github.omartelo.nfse4j.core.http.DrenagemDfe;
 import io.github.omartelo.nfse4j.core.http.LoteDistribuicaoDfe;
 import io.github.omartelo.nfse4j.core.http.NfseHttpResponse;
+import io.github.omartelo.nfse4j.core.http.ParametrosMunicipais;
 import io.github.omartelo.nfse4j.core.service.EmissaoNfseResult;
 import io.github.omartelo.nfse4j.core.service.SuccessfulXmlLogger;
 import io.github.omartelo.nfse4j.core.xml.dps.Dps;
@@ -17,6 +18,7 @@ import io.github.omartelo.nfse4j.core.xml.dps.DpsXmlReader;
 import io.github.omartelo.nfse4j.core.xml.evento.CancelamentoNfse;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
@@ -153,6 +155,50 @@ public final class NfseRunner {
             documento.tipoEvento(), documento.dataHoraGeracao(), documento.xml());
     }
 
+    public static ParametrosMunicipais.ConvenioResposta consultarConvenio(String codigoMunicipio,
+                                                                        Ambiente ambiente, CertificadoA1 cert) {
+        return nfse(ambiente, cert).parametrosMunicipais().consultarConvenio(codigoMunicipio);
+    }
+
+    /** Sem competencia, consulta a aliquota vigente hoje. */
+    public static ParametrosMunicipais.AliquotasResposta consultarAliquota(String codigoMunicipio, String codigoServico,
+                                                                         LocalDate competencia,
+                                                                         Ambiente ambiente, CertificadoA1 cert) {
+        return nfse(ambiente, cert).parametrosMunicipais()
+            .consultarAliquota(codigoMunicipio, codigoServico, competenciaOuHoje(competencia));
+    }
+
+    public static ParametrosMunicipais.AliquotasResposta consultarHistoricoAliquotas(String codigoMunicipio,
+                                                                                    String codigoServico,
+                                                                                    Ambiente ambiente,
+                                                                                    CertificadoA1 cert) {
+        return nfse(ambiente, cert).parametrosMunicipais().consultarHistoricoAliquotas(codigoMunicipio, codigoServico);
+    }
+
+    public static ParametrosMunicipais.BeneficioResposta consultarBeneficio(String codigoMunicipio,
+                                                                          String numeroBeneficio,
+                                                                          LocalDate competencia,
+                                                                          Ambiente ambiente, CertificadoA1 cert) {
+        return nfse(ambiente, cert).parametrosMunicipais()
+            .consultarBeneficio(codigoMunicipio, numeroBeneficio, competenciaOuHoje(competencia));
+    }
+
+    public static ParametrosMunicipais.RegimesEspeciaisResposta consultarRegimesEspeciais(String codigoMunicipio,
+                                                                                        String codigoServico,
+                                                                                        LocalDate competencia,
+                                                                                        Ambiente ambiente,
+                                                                                        CertificadoA1 cert) {
+        return nfse(ambiente, cert).parametrosMunicipais()
+            .consultarRegimesEspeciais(codigoMunicipio, codigoServico, competenciaOuHoje(competencia));
+    }
+
+    public static ParametrosMunicipais.RetencoesResposta consultarRetencoes(String codigoMunicipio,
+                                                                          LocalDate competencia,
+                                                                          Ambiente ambiente, CertificadoA1 cert) {
+        return nfse(ambiente, cert).parametrosMunicipais()
+            .consultarRetencoes(codigoMunicipio, competenciaOuHoje(competencia));
+    }
+
     public static CertificadoA1 carregarCertificado(String caminho, String senha) {
         return CertificadoA1.fromFile(Path.of(caminho), senha.toCharArray());
     }
@@ -201,6 +247,10 @@ public final class NfseRunner {
 
     private static DistribuicaoDfeClient distribuicaoDfe(Ambiente ambiente, CertificadoA1 cert) {
         return new DistribuicaoDfeClient(NfseContext.builder().ambiente(ambiente).certificado(cert).build());
+    }
+
+    private static LocalDate competenciaOuHoje(LocalDate competencia) {
+        return competencia == null ? LocalDate.now() : competencia;
     }
 
     private static Nfse nfse(Ambiente ambiente, CertificadoA1 cert) {
