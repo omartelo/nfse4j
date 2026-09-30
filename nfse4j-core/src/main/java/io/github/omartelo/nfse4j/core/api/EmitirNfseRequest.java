@@ -12,6 +12,8 @@ import java.time.OffsetDateTime;
  *
  * <p>O endereco do tomador e opcional (ex.: tomador pessoa fisica por CPF). O tpAmb nao e definido
  * aqui: a SDK ajusta conforme o ambiente do contexto na hora de emitir.
+ *
+ * <p>Com {@code substituicao}, a nota emitida substitui uma NFS-e ja emitida e a SEFIN cancela a original.
  */
 public record EmitirNfseRequest(
     String versaoDps,
@@ -23,8 +25,30 @@ public record EmitirNfseRequest(
     PrestadorRequest prestador,
     TomadorRequest tomador,
     ServicoRequest servico,
-    TributacaoRequest tributacao
+    TributacaoRequest tributacao,
+    SubstituicaoRequest substituicao
 ) {
+
+    public EmitirNfseRequest(
+        String versaoDps,
+        String codigoMunicipio,
+        String serie,
+        Long numero,
+        LocalDate dataCompetencia,
+        BigDecimal valorServico,
+        PrestadorRequest prestador,
+        TomadorRequest tomador,
+        ServicoRequest servico,
+        TributacaoRequest tributacao
+    ) {
+        this(versaoDps, codigoMunicipio, serie, numero, dataCompetencia, valorServico, prestador, tomador, servico,
+            tributacao, null);
+    }
+
+    public EmitirNfseRequest withSubstituicao(SubstituicaoRequest novaSubstituicao) {
+        return new EmitirNfseRequest(versaoDps, codigoMunicipio, serie, numero, dataCompetencia, valorServico,
+            prestador, tomador, servico, tributacao, novaSubstituicao);
+    }
 
     public Dps toDps(String cpfCnpjCertificado) {
         String prestadorCnpj = valueOr(prestador == null ? null : prestador.cnpj(), cpfCnpjCertificado);
@@ -52,7 +76,8 @@ public record EmitirNfseRequest(
                 prestadorDps(prestadorCnpj, prestadorCpf),
                 tomadorDps(),
                 servicoDps(municipio),
-                new Dps.Valores(required(valorServico, "valorServico"), tributacaoDps())
+                new Dps.Valores(required(valorServico, "valorServico"), tributacaoDps()),
+                substituicaoDps()
             )
         );
     }
@@ -145,6 +170,14 @@ public record EmitirNfseRequest(
         );
     }
 
+    private Dps.Substituicao substituicaoDps() {
+        if (substituicao == null) {
+            return null;
+        }
+        return new Dps.Substituicao(
+            substituicao.chaveSubstituida(), substituicao.codigoMotivo(), substituicao.descricaoMotivo());
+    }
+
     private static String required(String value, String field) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(field + " e obrigatorio.");
@@ -213,5 +246,8 @@ public record EmitirNfseRequest(
         Integer indicadorTotalTributos,
         BigDecimal percentualTotalTributosSimplesNacional
     ) {
+    }
+
+    public record SubstituicaoRequest(String chaveSubstituida, String codigoMotivo, String descricaoMotivo) {
     }
 }

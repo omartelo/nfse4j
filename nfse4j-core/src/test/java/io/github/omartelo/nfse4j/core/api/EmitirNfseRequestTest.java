@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.omartelo.nfse4j.core.api.EmitirNfseRequest.PrestadorRequest;
 import io.github.omartelo.nfse4j.core.api.EmitirNfseRequest.ServicoRequest;
+import io.github.omartelo.nfse4j.core.api.EmitirNfseRequest.SubstituicaoRequest;
 import io.github.omartelo.nfse4j.core.api.EmitirNfseRequest.TomadorRequest;
 import io.github.omartelo.nfse4j.core.api.EmitirNfseRequest.TributacaoRequest;
 import io.github.omartelo.nfse4j.core.xml.dps.Dps;
@@ -118,4 +119,31 @@ class EmitirNfseRequestTest {
         var ex = assertThrows(IllegalArgumentException.class, () -> req.toDps("99999999000191"));
         assertTrue(ex.getMessage().contains("tomador."));
     }
+
+    @Test
+    void mapeiaSubstituicaoParaDps() {
+        EmitirNfseRequest req = valida().withSubstituicao(
+            new SubstituicaoRequest(CHAVE_SUBSTITUIDA, "01", "Desenquadramento do Simples Nacional"));
+
+        Dps dps = req.toDps("99999999000191");
+
+        assertEquals(
+            new Dps.Substituicao(CHAVE_SUBSTITUIDA, "01", "Desenquadramento do Simples Nacional"),
+            dps.infDps().substituicao());
+    }
+
+    @Test
+    void semSubstituicaoDpsFicaSemSubst() {
+        assertNull(valida().toDps("99999999000191").infDps().substituicao());
+    }
+
+    @Test
+    void substituicaoComCodigoForaDoDominioFalha() {
+        EmitirNfseRequest req = valida().withSubstituicao(new SubstituicaoRequest(CHAVE_SUBSTITUIDA, "7", null));
+
+        var ex = assertThrows(IllegalArgumentException.class, () -> req.toDps("99999999000191"));
+        assertTrue(ex.getMessage().contains("codigoMotivo"), ex.getMessage());
+    }
+
+    private static final String CHAVE_SUBSTITUIDA = "35503082123456780001990000000000000050261234567890";
 }
