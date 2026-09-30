@@ -198,6 +198,10 @@ até 10 lotes por chamada, e o XML de um NSU sob demanda.
 
 O fluxo mais simples para quem já emite: aponte uma nota anterior (XML de DPS ou NFS-e) e troque só o que muda. O `DpsXmlReader` lê o exemplo, o `DpsReemissao` aplica os overrides (novo número, tomador, descrição, valor) e regenera o `Id` da DPS.
 
+Para não emitir uma nota diferente da original sem aviso, a reemissão recusa:
+- exemplo com grupo da DPS que o modelo não cobre (`subst`, `interm`, `IBSCBS`, `comExt`, `obra`, `atvEvento`, `infoCompl`, documentos de `vDedRed`, entre outros);
+- troca de valor quando o exemplo tem valores em R$ calculados sobre o valor original (`vDR`, descontos, PIS/COFINS, retenções federais, `vTotTrib` etc.). Percentuais são copiados.
+
 ## DANFSe (PDF) — geração local
 
 O módulo `nfse4j-danfse` gera o PDF do DANFSe **localmente** a partir do XML da NFS-e (o `<NFSe>` que a SEFIN devolve na emissão, no campo `nfseXmlGZipB64`).

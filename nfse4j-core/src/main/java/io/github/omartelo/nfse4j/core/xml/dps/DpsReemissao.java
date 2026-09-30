@@ -3,6 +3,8 @@ package io.github.omartelo.nfse4j.core.xml.dps;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -87,11 +89,68 @@ public final class DpsReemissao {
         );
     }
 
+    /**
+     * Troca o vServ mantendo o resto do exemplo. Recusa a troca quando o exemplo tem valores em R$
+     * calculados sobre o vServ original: copiados, ficariam incoerentes com o novo valor. Percentuais
+     * continuam validos e sao copiados.
+     */
     private static Dps.Valores comValor(Dps.Valores valores, BigDecimal valorServico) {
         if (valores == null || valorServico == null) {
             return valores;
         }
-        return new Dps.Valores(valorServico, valores.tributacao());
+        List<String> absolutos = valoresAbsolutosDerivadosDoServico(valores);
+        if (!absolutos.isEmpty()) {
+            throw new DpsXmlException("Exemplo tem valores em R$ calculados sobre o valor do servico original ("
+                + String.join(", ", absolutos) + "); trocar o valor do servico os deixaria incoerentes.");
+        }
+        return new Dps.Valores(
+            valorServico,
+            valores.tributacao(),
+            valores.valorRecebido(),
+            valores.descontos(),
+            valores.deducaoReducao()
+        );
+    }
+
+    private static List<String> valoresAbsolutosDerivadosDoServico(Dps.Valores valores) {
+        List<String> campos = new ArrayList<>();
+        adicionarSePresente(campos, "vReceb", valores.valorRecebido());
+        if (valores.descontos() != null) {
+            adicionarSePresente(campos, "vDescIncond", valores.descontos().incondicionado());
+            adicionarSePresente(campos, "vDescCond", valores.descontos().condicionado());
+        }
+        if (valores.deducaoReducao() != null) {
+            adicionarSePresente(campos, "vDR", valores.deducaoReducao().valor());
+        }
+        Dps.Tributacao tributacao = valores.tributacao();
+        if (tributacao.beneficioMunicipal() != null) {
+            adicionarSePresente(campos, "vRedBCBM", tributacao.beneficioMunicipal().valorReducaoBaseCalculo());
+        }
+        campos.addAll(valoresAbsolutosFederais(tributacao.tributacaoFederal()));
+        adicionarSePresente(campos, "vTotTrib", tributacao.valorTotalTributos());
+        return campos;
+    }
+
+    private static List<String> valoresAbsolutosFederais(Dps.TributacaoFederal federal) {
+        List<String> campos = new ArrayList<>();
+        if (federal == null) {
+            return campos;
+        }
+        if (federal.pisCofins() != null) {
+            adicionarSePresente(campos, "vBCPisCofins", federal.pisCofins().baseCalculo());
+            adicionarSePresente(campos, "vPis", federal.pisCofins().valorPis());
+            adicionarSePresente(campos, "vCofins", federal.pisCofins().valorCofins());
+        }
+        adicionarSePresente(campos, "vRetCP", federal.valorRetidoCp());
+        adicionarSePresente(campos, "vRetIRRF", federal.valorRetidoIrrf());
+        adicionarSePresente(campos, "vRetCSLL", federal.valorRetidoCsll());
+        return campos;
+    }
+
+    private static void adicionarSePresente(List<String> campos, String nome, Object valor) {
+        if (valor != null) {
+            campos.add(nome);
+        }
     }
 
     private static <T> T valueOr(T value, T fallback) {

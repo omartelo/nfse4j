@@ -49,6 +49,10 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   O XSD aceitava a nota sem eles, então a SEFIN podia autorizá-la com a tributação errada. O
   `Dps.Valores` e o `Dps.Tributacao` passam a modelar esses campos, que são lidos e gerados na ordem
   do XSD.
+- **Troca de valor na reemissão copiava valores em R$ calculados sobre o valor antigo.** Com
+  `valorServico` sobrescrito, `vDR`, descontos, `vRedBCBM`, PIS/COFINS, retenções federais e `vTotTrib`
+  do exemplo ficariam incoerentes com o novo valor. Agora o `DpsReemissao` recusa a troca listando os
+  campos. Percentuais seguem copiados, inclusive o `pDR`, que antes se perdia na troca.
 
 ### Alterado
 - **O `nfse4j-core` passa a depender do Gson** (Apache-2.0), para ler o JSON das APIs do ADN. Deixa

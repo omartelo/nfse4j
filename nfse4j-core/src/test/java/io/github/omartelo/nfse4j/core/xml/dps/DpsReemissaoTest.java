@@ -273,4 +273,67 @@ class DpsReemissaoTest {
 
         assertTrue(xml.contains(trechoEsperado), xml);
     }
+
+    private static Dps reemitirComNovoValor(String exemploXml) {
+        return DpsReemissao.reemitir(DpsXmlReader.read(exemploXml), new DpsReemissao.Overrides(
+            11L, null, null, null, new BigDecimal("400.00"), null, null));
+    }
+
+    static Stream<Arguments> valoresAbsolutosDerivadosDoServico() {
+        String tribPadrao = trib(ISSQN + RETENCAO_ISSQN, "");
+        return Stream.of(
+            Arguments.of("vReceb", "<vServPrest><vReceb>240.00</vReceb><vServ>250.00</vServ></vServPrest>" + tribPadrao),
+            Arguments.of("vDescIncond",
+                VALOR_SERVICO + "<vDescCondIncond><vDescIncond>10.00</vDescIncond></vDescCondIncond>" + tribPadrao),
+            Arguments.of("vDescCond",
+                VALOR_SERVICO + "<vDescCondIncond><vDescCond>5.00</vDescCond></vDescCondIncond>" + tribPadrao),
+            Arguments.of("vDR", VALOR_SERVICO + "<vDedRed><vDR>50.00</vDR></vDedRed>" + tribPadrao),
+            Arguments.of("vRedBCBM", VALOR_SERVICO + trib(ISSQN + "<BM><nBM>" + "2".repeat(14) + "</nBM>"
+                + "<vRedBCBM>30.00</vRedBCBM></BM>" + RETENCAO_ISSQN, "")),
+            Arguments.of("vBCPisCofins", VALOR_SERVICO
+                + trib(ISSQN + RETENCAO_ISSQN, piscofins("<vBCPisCofins>250.00</vBCPisCofins>"))),
+            Arguments.of("vPis", VALOR_SERVICO + trib(ISSQN + RETENCAO_ISSQN, piscofins("<vPis>1.63</vPis>"))),
+            Arguments.of("vCofins", VALOR_SERVICO + trib(ISSQN + RETENCAO_ISSQN, piscofins("<vCofins>7.50</vCofins>"))),
+            Arguments.of("vRetCP", VALOR_SERVICO + trib(ISSQN + RETENCAO_ISSQN, tribFed("<vRetCP>11.00</vRetCP>"))),
+            Arguments.of("vRetIRRF", VALOR_SERVICO + trib(ISSQN + RETENCAO_ISSQN, tribFed("<vRetIRRF>3.75</vRetIRRF>"))),
+            Arguments.of("vRetCSLL", VALOR_SERVICO + trib(ISSQN + RETENCAO_ISSQN, tribFed("<vRetCSLL>2.50</vRetCSLL>"))),
+            Arguments.of("vTotTrib", VALOR_SERVICO + "<trib><tribMun>" + ISSQN + RETENCAO_ISSQN + "</tribMun><totTrib>"
+                + "<vTotTrib><vTotTribFed>33.13</vTotTribFed><vTotTribEst>0.00</vTotTribEst>"
+                + "<vTotTribMun>4.80</vTotTribMun></vTotTrib></totTrib></trib>")
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("valoresAbsolutosDerivadosDoServico")
+    void trocaDeValorRecusaExemploComValorAbsolutoDerivadoDoServico(String campo, String conteudoValores) {
+        String exemplo = exemploComValores(conteudoValores);
+
+        DpsXmlException erro = assertThrows(DpsXmlException.class, () -> reemitirComNovoValor(exemplo));
+
+        assertTrue(erro.getMessage().contains(campo), erro.getMessage());
+    }
+
+    @Test
+    void trocaDeValorListaTodosOsValoresAbsolutosDoExemplo() {
+        String exemplo = exemploComValores(VALOR_SERVICO + "<vDedRed><vDR>50.00</vDR></vDedRed>"
+            + trib(ISSQN + RETENCAO_ISSQN, tribFed("<vRetIRRF>3.75</vRetIRRF>")));
+
+        DpsXmlException erro = assertThrows(DpsXmlException.class, () -> reemitirComNovoValor(exemplo));
+
+        assertTrue(erro.getMessage().contains("vDR, vRetIRRF"), erro.getMessage());
+    }
+
+    @Test
+    void trocaDeValorPreservaPercentuaisDoExemplo() {
+        String percentuais = "<vDedRed><pDR>20.00</pDR></vDedRed>"
+            + "<trib><tribMun>" + ISSQN + "<BM><nBM>" + "2".repeat(14) + "</nBM><pRedBCBM>12.50</pRedBCBM></BM>"
+            + RETENCAO_ISSQN + "<pAliq>2.00</pAliq></tribMun>"
+            + "<tribFed><piscofins><CST>01</CST><pAliqPis>0.65</pAliqPis><pAliqCofins>3.00</pAliqCofins></piscofins></tribFed>"
+            + "<totTrib><pTotTrib><pTotTribFed>13.25</pTotTribFed><pTotTribEst>0.00</pTotTribEst>"
+            + "<pTotTribMun>1.92</pTotTribMun></pTotTrib></totTrib></trib>";
+
+        String xml = new DpsXmlBuilder().build(reemitirComNovoValor(exemploComValores(VALOR_SERVICO + percentuais)));
+
+        assertTrue(xml.contains("<vServPrest><vServ>400.00</vServ></vServPrest>" + percentuais), xml);
+    }
 }
