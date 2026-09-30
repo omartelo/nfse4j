@@ -11,6 +11,11 @@ val catalog = libs
 subprojects {
     apply(plugin = "java")
 
+    // Compila e roda os testes no JDK 21, o mesmo do CI, mesmo quando o Gradle roda num JDK mais novo.
+    extensions.configure<JavaPluginExtension> {
+        toolchain.languageVersion = JavaLanguageVersion.of(21)
+    }
+
     tasks.withType<JavaCompile>().configureEach {
         options.release = 21
         options.encoding = "UTF-8"

@@ -5,6 +5,7 @@ Contribuições são bem-vindas! Algumas diretrizes:
 ## Desenvolvimento
 
 - Java 21, UTF-8, 4 espaços de indentação. Pacote raiz `io.github.omartelo.nfse4j`.
+- O build usa toolchain Java 21: se o seu JDK padrão for mais novo, o 21 precisa estar instalado (o Gradle o encontra sozinho). Assim os testes locais rodam no mesmo JDK do CI.
 - Mantenha o `nfse4j-core` com **uma única dependência de runtime**, o Gson. Qualquer outra passa por discussão antes.
 - Rode os testes antes de abrir PR: `./gradlew test`.
 - Testes não devem exigir certificado real — gere material de teste com `TestPkcs12Factory`.
