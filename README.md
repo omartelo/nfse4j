@@ -96,6 +96,7 @@ Depois, é só conversar com o agente: _"Emita uma NFS-e de R$ 100 para o CPF 11
 | `manifestar_nfse` | Confirma ou rejeita uma NFS-e como prestador, tomador ou intermediário (eventos 202201, 203202, 204203, 202205, 203206, 204207). |
 | `distribuir_dfe` | Lista as NFS-e e eventos em que o CNPJ do certificado é emitente, tomador ou intermediário (distribuição de DF-e do ADN), a partir de um NSU. Devolve só o resumo. |
 | `consultar_dfe` | Traz o XML de um documento da distribuição pelo NSU. |
+| `consultar_eventos_dfe` | Lista os eventos de uma NFS-e pela chave de acesso (distribuição de DF-e do ADN). Devolve só o resumo; o XML sai por `consultar_dfe`. |
 | `gerar_danfse` | **Gera o PDF do DANFSe localmente** a partir do XML da NFS-e. |
 | `consultar_aliquota` | Alíquota de ISS de um serviço no município (ADN). Use antes de emitir. |
 | `consultar_historico_aliquotas` | Todas as alíquotas que o serviço já teve no município, com vigências. |
@@ -126,6 +127,7 @@ java -jar $JAR manifestar --chave CHAVE_DA_NFSE --tipo rejeicao-tomador --motivo
 java -jar $JAR danfse --xml nota.xml --saida danfse.pdf
 java -jar $JAR distribuir-dfe --nsu 0 --json      # notas emitidas contra o CNPJ (resumo)
 java -jar $JAR consultar-dfe --nsu 42 --json      # XML de um documento da distribuição
+java -jar $JAR consultar-eventos-dfe --chave CHAVE_DA_NFSE --json  # eventos da nota (resumo)
 java -jar $JAR aliquota --municipio 3550308 --servico 01.01.01.000 --json
 # Producao (documento fiscal REAL) exige a flag:
 java -jar $JAR emitir --arquivo nota.json --ambiente producao --confirmar-producao
@@ -191,8 +193,8 @@ devolvem o `LoteDistribuicaoDfe` tipado; HTTP 400 e 404 são respostas de negóc
 `cnpjConsulta` é opcional (`null` usa o CNPJ do certificado); quando informado, precisa ter a mesma
 raiz do certificado e ir sem máscara (aceita CNPJ alfanumérico).
 
-O `NfseRunner.distribuirDfe` / `consultarDfe` são a versão usada pela CLI e pelo MCP: resumo sem XML,
-até 10 lotes por chamada, e o XML de um NSU sob demanda.
+O `NfseRunner.distribuirDfe` / `consultarDfe` / `consultarEventosDfe` são a versão usada pela CLI e
+pelo MCP: resumo sem XML, até 10 lotes por chamada, eventos de uma chave, e o XML de um NSU sob demanda.
 
 ## Emitir a partir de uma nota de exemplo
 
