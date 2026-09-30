@@ -61,6 +61,20 @@ class EmitirNfseRequestTest {
     }
 
     @Test
+    void certificadoComCnpjAlfanumericoFalhaNaMontagemDaDps() {
+        EmitirNfseRequest req = new EmitirNfseRequest(
+            null, "3550308", null, 1L, null, new BigDecimal("10.00"),
+            null,
+            new TomadorRequest(null, "11144477735", "Fulano", null, null, null, null, null, null, null, null),
+            new ServicoRequest(null, "010101", null, "x", null),
+            new TributacaoRequest(1, 1, 0, null));
+
+        IllegalArgumentException erro = assertThrows(IllegalArgumentException.class, () -> req.toDps("12ABC34501DE35"));
+
+        assertEquals("CNPJ alfanumérico ainda não é aceito pelo leiaute da NFS-e Nacional (TSCNPJ [0-9]{14}, XSD v1.01): 12ABC34501DE35", erro.getMessage());
+    }
+
+    @Test
     void numeroNuloFalha() {
         EmitirNfseRequest req = new EmitirNfseRequest(
             null, "3550308", "1", null, null, new BigDecimal("10.00"),

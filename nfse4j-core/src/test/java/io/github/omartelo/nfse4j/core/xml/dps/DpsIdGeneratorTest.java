@@ -1,6 +1,8 @@
 package io.github.omartelo.nfse4j.core.xml.dps;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -15,26 +17,13 @@ class DpsIdGeneratorTest {
         assertEquals(45, id.length());
     }
 
-    @Test
-    void shouldGenerateDpsIdForAlphanumericCnpj() {
-        String id = DpsIdGenerator.generate("12ABC34501DE35", "3129806", "70000", 24);
+    @ParameterizedTest
+    @ValueSource(strings = {"12ABC34501DE35", "12.ABC.345/01DE-35", "12abc34501de35"})
+    void shouldRejectAlphanumericCnpjUntilLayoutAcceptsIt(String cnpj) {
+        IllegalArgumentException erro = assertThrows(IllegalArgumentException.class,
+            () -> DpsIdGenerator.generate(cnpj, "3129806", "70000", 24));
 
-        assertEquals("DPS3129806212ABC34501DE3570000000000000000024", id);
-        assertEquals(45, id.length());
-    }
-
-    @Test
-    void shouldAcceptMaskedAlphanumericCnpj() {
-        assertEquals(
-            DpsIdGenerator.generate("12ABC34501DE35", "3129806", "1", 1),
-            DpsIdGenerator.generate("12.ABC.345/01DE-35", "3129806", "1", 1));
-    }
-
-    @Test
-    void shouldUppercaseAlphanumericCnpj() {
-        assertEquals(
-            DpsIdGenerator.generate("12ABC34501DE35", "3129806", "1", 1),
-            DpsIdGenerator.generate("12abc34501de35", "3129806", "1", 1));
+        assertEquals("CNPJ alfanumérico ainda não é aceito pelo leiaute da NFS-e Nacional (TSCNPJ [0-9]{14}, XSD v1.01): 12ABC34501DE35", erro.getMessage());
     }
 
     @Test

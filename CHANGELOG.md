@@ -5,6 +5,20 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+### Corrigido
+- **DPS e pedido de evento com CNPJ alfanumérico agora falham na montagem, com mensagem clara.** O
+  leiaute da NFS-e Nacional ainda exige CNPJ numérico: `TSCNPJ` é `[0-9]{14}` e `TSIdDPS` é
+  `DPS[0-9]{42}` no XSD v1.01 versionado (`tiposSimples_v1.01.xsd`) e nos pacotes oficiais de
+  gov.br/nfse conferidos em 30/09/2026 (produção: `nfse-esquemas_xsd-v1-01-20260209.zip`; produção
+  restrita da reforma: `nfse-esquemas_xsd-rtc-v1-00-20251210.zip`). Desde a 0.5.0 o SDK preservava as
+  letras no Id da DPS e no autor do evento, e a validação por XSD da 0.6.0 recusava o próprio documento
+  gerado com mensagem genérica de schema (`... is not facet-valid with respect to pattern
+  'DPS[0-9]{42}'`). Agora o `DpsIdGenerator` (emissão e reemissão) e os pedidos de cancelamento,
+  análise fiscal e manifestação lançam `IllegalArgumentException`: "CNPJ alfanumérico ainda não é
+  aceito pelo leiaute da NFS-e Nacional (TSCNPJ [0-9]{14}, XSD v1.01)". A normalização que preserva as
+  letras continua lá: quando o leiaute mudar, basta trocar o XSD e remover essa checagem. O
+  `CertificadoA1` segue reconhecendo CNPJ alfanumérico no subject.
+
 ## [0.6.0] - 2026-09-30
 
 ### Adicionado
@@ -94,10 +108,11 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 ## [0.5.0] - 2026-09-30
 
 ### Corrigido
-- **CNPJ alfanumérico (IN RFB 2.229/2024) era recusado.** A normalização removia as letras antes da
-  checagem de tamanho, então não era possível emitir nem cancelar nota para esses CNPJs, e o
-  `CertificadoA1` não os reconhecia no subject. Agora só a máscara é removida. CPF e CNPJ numéricos
-  seguem como antes.
+- **CNPJ alfanumérico (IN RFB 2.229/2024) perdia as letras.** A normalização removia as letras antes
+  da checagem de tamanho, e o `CertificadoA1` não os reconhecia no subject. Agora só a máscara é
+  removida. CPF e CNPJ numéricos seguem como antes. Correção posterior: isso **não** tornou possível
+  emitir nem cancelar nota para esses CNPJs, porque o leiaute da NFS-e Nacional (XSD v1.01) ainda
+  exige CNPJ numérico; ver [Não lançado].
 
 ### Alterado
 - **Projeto renomeado para `nfse4j`** (antes `nfse-java-mcp`), mantido a partir deste fork. Mudanças

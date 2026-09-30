@@ -3,10 +3,11 @@ package io.github.omartelo.nfse4j.core.xml.evento;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CancelamentoNfseTest {
 
@@ -23,17 +24,12 @@ class CancelamentoNfseTest {
             "1.0.0");
     }
 
-    @Test
-    void shouldAcceptAlphanumericCnpj() {
-        CancelamentoNfse evento = cancelamento("12ABC34501DE35");
+    @ParameterizedTest
+    @ValueSource(strings = {"12ABC34501DE35", "12.abc.345/01de-35"})
+    void shouldRejectAlphanumericCnpjUntilLayoutAcceptsIt(String cnpj) {
+        IllegalArgumentException erro = assertThrows(IllegalArgumentException.class, () -> cancelamento(cnpj));
 
-        assertEquals("12ABC34501DE35", evento.cpfCnpjAutor());
-        assertTrue(evento.autorPessoaJuridica());
-    }
-
-    @Test
-    void shouldNormalizeMaskAndCase() {
-        assertEquals("12ABC34501DE35", cancelamento("12.abc.345/01de-35").cpfCnpjAutor());
+        assertEquals("CNPJ alfanumérico ainda não é aceito pelo leiaute da NFS-e Nacional (TSCNPJ [0-9]{14}, XSD v1.01): 12ABC34501DE35", erro.getMessage());
     }
 
     @Test

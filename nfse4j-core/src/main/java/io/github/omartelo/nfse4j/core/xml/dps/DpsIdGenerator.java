@@ -16,6 +16,7 @@ public final class DpsIdGenerator {
         if (documento.length() != 11 && documento.length() != 14) {
             throw new IllegalArgumentException("CPF/CNPJ do emitente deve ter 11 ou 14 caracteres.");
         }
+        recusarCnpjAlfanumerico(documento);
         if (municipio.length() != 7) {
             throw new IllegalArgumentException("Codigo do municipio deve ter 7 digitos.");
         }
@@ -43,6 +44,16 @@ public final class DpsIdGenerator {
     private static String normalizeDocumento(String value) {
         Objects.requireNonNull(value, "value is required");
         return value.replaceAll("[^A-Za-z0-9]", "").toUpperCase(Locale.ROOT);
+    }
+
+    // O leiaute v1.01 (TSCNPJ [0-9]{14}, TSIdDPS DPS[0-9]{42}) ainda nao aceita o CNPJ alfanumerico da
+    // IN RFB 2.229/2024. A normalizacao ja preserva as letras: quando o XSD mudar, basta remover esta checagem.
+    private static void recusarCnpjAlfanumerico(String documento) {
+        if (documento.length() == 14 && !documento.matches("[0-9]{14}")) {
+            throw new IllegalArgumentException(
+                "CNPJ alfanumérico ainda não é aceito pelo leiaute da NFS-e Nacional (TSCNPJ [0-9]{14}, XSD v1.01): "
+                    + documento);
+        }
     }
 
     private static String leftPad(String value, int size) {
