@@ -43,6 +43,12 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   `cMotivoEmisTI`, `chNFSeRej`, `subst`, `interm`, `IBSCBS`, `cPaisPrestacao`, `cIntContrib`, `comExt`,
   `obra`, `atvEvento`, `infoCompl` e os documentos de `vDedRed`, e a nota saía sem eles. Agora a leitura
   falha com `DpsXmlException` nomeando os grupos presentes.
+- **Reemissão a partir de nota de exemplo saía com tributação diferente da original.** O leitor
+  descartava `vReceb`, `vDescCondIncond`, `vDedRed` (`pDR`/`vDR`), `cPaisResult`, `tpImunidade`,
+  `exigSusp`, `BM`, `pAliq` e o grupo `tribFed` inteiro (PIS/COFINS e retenções de CP, IRRF e CSLL).
+  O XSD aceitava a nota sem eles, então a SEFIN podia autorizá-la com a tributação errada. O
+  `Dps.Valores` e o `Dps.Tributacao` passam a modelar esses campos, que são lidos e gerados na ordem
+  do XSD.
 
 ### Alterado
 - **O `nfse4j-core` passa a depender do Gson** (Apache-2.0), para ler o JSON das APIs do ADN. Deixa

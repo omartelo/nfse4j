@@ -197,4 +197,80 @@ class DpsReemissaoTest {
     void exemploSemGrupoNaoSuportadoContinuaSendoLido() {
         assertEquals("Servico", DpsXmlReader.read(exemploMinimo()).infDps().servico().descricao());
     }
+
+    private static final String VALOR_SERVICO = "<vServPrest><vServ>250.00</vServ></vServPrest>";
+    private static final String ISSQN = "<tribISSQN>1</tribISSQN>";
+    private static final String RETENCAO_ISSQN = "<tpRetISSQN>1</tpRetISSQN>";
+    private static final String TOTAL_TRIBUTOS = "<totTrib><indTotTrib>0</indTotTrib></totTrib>";
+
+    private static String trib(String conteudoTribMun, String tribFed) {
+        return "<trib><tribMun>" + conteudoTribMun + "</tribMun>" + tribFed + TOTAL_TRIBUTOS + "</trib>";
+    }
+
+    private static String tribFed(String conteudo) {
+        return "<tribFed>" + conteudo + "</tribFed>";
+    }
+
+    private static String piscofins(String conteudo) {
+        return tribFed("<piscofins><CST>01</CST>" + conteudo + "</piscofins>");
+    }
+
+    static Stream<Arguments> camposDeValores() {
+        String tribPadrao = trib(ISSQN + RETENCAO_ISSQN, "");
+        String exigSusp = "<exigSusp><tpSusp>1</tpSusp><nProcesso>" + "1".repeat(30) + "</nProcesso></exigSusp>";
+        String bmValor = "<BM><nBM>" + "2".repeat(14) + "</nBM><vRedBCBM>30.00</vRedBCBM></BM>";
+        String bmPercentual = "<BM><nBM>" + "2".repeat(14) + "</nBM><pRedBCBM>12.50</pRedBCBM></BM>";
+        return Stream.of(
+            campoComTribPadrao("vReceb",
+                "<vServPrest><vReceb>240.00</vReceb><vServ>250.00</vServ></vServPrest>", tribPadrao),
+            campoComTribPadrao("vDescIncond",
+                VALOR_SERVICO + "<vDescCondIncond><vDescIncond>10.00</vDescIncond></vDescCondIncond>", tribPadrao),
+            campoComTribPadrao("vDescCond",
+                VALOR_SERVICO + "<vDescCondIncond><vDescCond>5.00</vDescCond></vDescCondIncond>", tribPadrao),
+            campoComTribPadrao("pDR", VALOR_SERVICO + "<vDedRed><pDR>20.00</pDR></vDedRed>", tribPadrao),
+            campoComTribPadrao("vDR", VALOR_SERVICO + "<vDedRed><vDR>50.00</vDR></vDedRed>", tribPadrao),
+            campoDeTrib("cPaisResult",
+                trib("<tribISSQN>3</tribISSQN><cPaisResult>US</cPaisResult>" + RETENCAO_ISSQN, "")),
+            campoDeTrib("tpImunidade",
+                trib("<tribISSQN>2</tribISSQN><tpImunidade>3</tpImunidade>" + RETENCAO_ISSQN, "")),
+            campoDeTrib("exigSusp", trib(ISSQN + exigSusp + RETENCAO_ISSQN, "")),
+            campoDeTrib("BM/vRedBCBM", trib(ISSQN + bmValor + RETENCAO_ISSQN, "")),
+            campoDeTrib("BM/pRedBCBM", trib(ISSQN + bmPercentual + RETENCAO_ISSQN, "")),
+            campoDeTrib("pAliq", trib(ISSQN + RETENCAO_ISSQN + "<pAliq>2.00</pAliq>", "")),
+            campoDeTrib("tribMun completo", trib("<tribISSQN>1</tribISSQN><cPaisResult>BR</cPaisResult>"
+                + "<tpImunidade>0</tpImunidade>" + exigSusp + bmValor + RETENCAO_ISSQN + "<pAliq>5.00</pAliq>", "")),
+            campoDeTrib("CST", trib(ISSQN + RETENCAO_ISSQN, piscofins(""))),
+            campoDeTrib("vBCPisCofins", trib(ISSQN + RETENCAO_ISSQN, piscofins("<vBCPisCofins>250.00</vBCPisCofins>"))),
+            campoDeTrib("pAliqPis", trib(ISSQN + RETENCAO_ISSQN, piscofins("<pAliqPis>0.65</pAliqPis>"))),
+            campoDeTrib("pAliqCofins", trib(ISSQN + RETENCAO_ISSQN, piscofins("<pAliqCofins>3.00</pAliqCofins>"))),
+            campoDeTrib("vPis", trib(ISSQN + RETENCAO_ISSQN, piscofins("<vPis>1.63</vPis>"))),
+            campoDeTrib("vCofins", trib(ISSQN + RETENCAO_ISSQN, piscofins("<vCofins>7.50</vCofins>"))),
+            campoDeTrib("tpRetPisCofins", trib(ISSQN + RETENCAO_ISSQN, piscofins("<tpRetPisCofins>2</tpRetPisCofins>"))),
+            campoDeTrib("vRetCP", trib(ISSQN + RETENCAO_ISSQN, tribFed("<vRetCP>11.00</vRetCP>"))),
+            campoDeTrib("vRetIRRF", trib(ISSQN + RETENCAO_ISSQN, tribFed("<vRetIRRF>3.75</vRetIRRF>"))),
+            campoDeTrib("vRetCSLL", trib(ISSQN + RETENCAO_ISSQN, tribFed("<vRetCSLL>2.50</vRetCSLL>"))),
+            campoDeTrib("tribFed completo", trib(ISSQN + RETENCAO_ISSQN, tribFed("<piscofins><CST>01</CST>"
+                + "<vBCPisCofins>250.00</vBCPisCofins><pAliqPis>0.65</pAliqPis><pAliqCofins>3.00</pAliqCofins>"
+                + "<vPis>1.63</vPis><vCofins>7.50</vCofins><tpRetPisCofins>2</tpRetPisCofins></piscofins>"
+                + "<vRetCP>11.00</vRetCP><vRetIRRF>3.75</vRetIRRF><vRetCSLL>2.50</vRetCSLL>")))
+        );
+    }
+
+    /** O trecho esperado e todo o conteudo de valores: o campo, com os vizinhos na ordem do XSD. */
+    private static Arguments campoComTribPadrao(String campo, String antesDoTrib, String trib) {
+        String valores = antesDoTrib + trib;
+        return Arguments.of(campo, valores, valores);
+    }
+
+    private static Arguments campoDeTrib(String campo, String trib) {
+        return Arguments.of(campo, VALOR_SERVICO + trib, trib);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("camposDeValores")
+    void reemissaoPreservaCampoDeValores(String campo, String conteudoValores, String trechoEsperado) {
+        String xml = reemitirXml(exemploComValores(conteudoValores));
+
+        assertTrue(xml.contains(trechoEsperado), xml);
+    }
 }
