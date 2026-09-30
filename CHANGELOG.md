@@ -5,7 +5,7 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
-## [0.5.0] - 2026-09-29
+## [0.5.0] - 2026-09-30
 
 ### Corrigido
 - **CNPJ alfanumérico (IN RFB 2.229/2024) era recusado.** A normalização removia as letras antes da
@@ -25,6 +25,13 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - **Build migrado de Maven para Gradle** (Kotlin DSL, wrapper 9.7.1, version catalog em
   `gradle/libs.versions.toml`). Fat jars em `nfse4j-{cli,mcp}/build/libs/`; publicação no Central via
   `./gradlew publishToMavenCentral`.
+
+### Removido
+- **Download do DANFSe pela API oficial (ADN)**, desligada em 2026-07-01: `DanfseService`,
+  `DanfseClient`, `Nfse.danfse()`, `NfseRunner.baixarPdf`/`PdfResult`, `NfseBinaryResponse`,
+  `NfseHttpClient.getBytes`, `EndpointResolver.danfse()`/`withEndpoints(...)`, o comando `pdf` do
+  CLI e a ferramenta `baixar_danfse` do MCP. Use a geração local (`nfse4j-danfse`, `danfse --xml`
+  no CLI, `gerar_danfse` no MCP).
 
 ## [0.4.5] - 2026-06-25
 

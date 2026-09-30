@@ -141,7 +141,7 @@ public final class NfseMcpServer {
             }));
 
         tools.add(tool(jsonMapper, "gerar_danfse",
-            "Gera o PDF do DANFSe LOCALMENTE a partir do XML autorizado da NFS-e (campo nfseXmlGZipB64 da emissao, ou o XML <NFSe>). Substitui baixar_danfse (a API oficial de download e desligada em 2026-07-01).",
+            "Gera o PDF do DANFSe LOCALMENTE a partir do XML autorizado da NFS-e (campo nfseXmlGZipB64 da emissao, ou o XML <NFSe>).",
             """
             {"type":"object","properties":{
               "xmlNfse":{"type":"string","description":"XML autorizado da NFS-e (<NFSe>...). Use este OU caminhoXmlNfse OU nfseXmlGZipB64."},
@@ -171,21 +171,6 @@ public final class NfseMcpServer {
                 return ok(r);
             }));
 
-        tools.add(tool(jsonMapper, "baixar_danfse",
-            "[LEGADO — valido ate 2026-07-01] Baixa o DANFSe/PDF da API oficial (ADN). Apos o desligamento, use gerar_danfse.",
-            """
-            {"type":"object","required":["chaveAcesso"],"properties":{
-              "chaveAcesso":{"type":"string"},
-              "caminhoSaida":{"type":"string","description":"Arquivo PDF de saida. Padrao: danfse-<chave>.pdf no diretorio atual."},
-              "ambiente":{"type":"string","enum":["homologacao","producao"],"default":"homologacao"},
-              "caminhoCertificado":{"type":"string"},"senhaCertificado":{"type":"string"}
-            }}""",
-            (ex, req) -> {
-                Map<String, Object> a = req.arguments();
-                String chave = exigirTexto(a, "chaveAcesso");
-                Path saida = Path.of(textoOu(a, "caminhoSaida", "danfse-" + chave + ".pdf"));
-                return ok(NfseRunner.baixarPdf(chave, saida, ambiente(a), certificado(a)));
-            }));
 
         return tools.toArray(new SyncToolSpecification[0]);
     }

@@ -45,7 +45,6 @@ public final class Cli {
                 case "emitir-de-exemplo" -> emitirDeExemplo(a);
                 case "consultar" -> consultar(a);
                 case "cancelar" -> cancelar(a);
-                case "pdf" -> pdf(a);
                 case "danfse" -> danfse(a);
                 case "help", "-h", "--help" -> usage();
                 default -> {
@@ -101,12 +100,6 @@ public final class Cli {
             certificado(a),
             a.flag("confirmar-producao"));
         emit(a, result);
-    }
-
-    private static void pdf(Args a) {
-        String chave = a.required("chave");
-        Path saida = Path.of(a.getOr("saida", "danfse-" + chave + ".pdf"));
-        emit(a, NfseRunner.baixarPdf(chave, saida, a.ambiente(), certificado(a)));
     }
 
     // Gera o DANFSe localmente a partir do XML autorizado da NFS-e (nao baixa da API oficial).
@@ -189,7 +182,6 @@ public final class Cli {
               consultar --chave CHAVE       Consulta uma NFS-e pela chave de acesso.
               cancelar --chave CHAVE --motivo-codigo C --motivo-descricao D
                                             Cancela uma NFS-e (evento 101101).
-              pdf --chave CHAVE [--saida arq.pdf]   Baixa o DANFSe/PDF da API oficial (legado, ate 2026-07-01).
               danfse --xml nota.xml [--saida arq.pdf] [--logo-emitente logo.png]
                                             Gera o DANFSe/PDF localmente a partir do XML da NFS-e.
                                             --logo-emitente: logo do prestador no cabecalho (~300x120 px).

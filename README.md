@@ -93,7 +93,6 @@ Depois, é só conversar com o agente: _"Emita uma NFS-e de R$ 100 para o CPF 11
 | `consultar_nfse` | Consulta uma NFS-e pela chave de acesso. |
 | `cancelar_nfse` | Cancela uma NFS-e (evento 101101). |
 | `gerar_danfse` | **Gera o PDF do DANFSe localmente** a partir do XML da NFS-e. |
-| `baixar_danfse` | Baixa o DANFSe/PDF da API oficial *(legado — ver abaixo)*. |
 
 Todas aceitam `ambiente` (`homologacao` por padrão) e, nas operações de escrita, `confirmarProducao` (obrigatório `true` para produção). O certificado vem das envs `NFSE_CERT_PATH`/`NFSE_CERT_PASSWORD` ou dos parâmetros da ferramenta.
 
@@ -108,7 +107,7 @@ java -jar $JAR emitir --arquivo docs/exemplos/emitir.request.json --json
 java -jar $JAR emitir-de-exemplo --exemplo nota-antiga.xml --numero 123 \
   --tomador-cpf 11144477735 --tomador-nome "Fulano" --descricao "Consultoria" --valor 250.00
 java -jar $JAR consultar --chave CHAVE_DA_NFSE --json
-java -jar $JAR pdf --chave CHAVE_DA_NFSE --saida danfse.pdf
+java -jar $JAR danfse --xml nota.xml --saida danfse.pdf
 # Producao (documento fiscal REAL) exige a flag:
 java -jar $JAR emitir --arquivo nota.json --ambiente producao --confirmar-producao
 ```
@@ -143,9 +142,9 @@ O fluxo mais simples para quem já emite: aponte uma nota anterior (XML de DPS o
 
 ## DANFSe (PDF) — geração local
 
-> ⚠️ **A API oficial de download do DANFSe será desligada em 1º/07/2026** (Nota Técnica SE/CGNFS-e nº 008/2026). A partir dessa data, cada emissor gera o DANFSe localmente a partir do XML autorizado da NFS-e. Este projeto já faz isso.
+> A API oficial de download do DANFSe foi desligada em 1º/07/2026 (Nota Técnica SE/CGNFS-e nº 008/2026). Desde então, cada emissor gera o DANFSe localmente a partir do XML autorizado da NFS-e.
 
-O módulo `nfse4j-danfse` gera o PDF do DANFSe **localmente** a partir do XML da NFS-e (o `<NFSe>` que a SEFIN devolve na emissão, no campo `nfseXmlGZipB64`). Não depende da API que será descontinuada.
+O módulo `nfse4j-danfse` gera o PDF do DANFSe **localmente** a partir do XML da NFS-e (o `<NFSe>` que a SEFIN devolve na emissão, no campo `nfseXmlGZipB64`).
 
 ```java
 // XML autorizado da NFS-e (string)

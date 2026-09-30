@@ -49,11 +49,6 @@ public final class NfseHttpClient {
         return send(builder.build());
     }
 
-    public NfseBinaryResponse getBytes(URI uri, Map<String, String> headers) {
-        HttpRequest.Builder builder = baseRequest(uri, headers).GET();
-        return sendBytes(builder.build());
-    }
-
     public NfseHttpResponse post(URI uri, String body, String contentType) {
         return post(uri, body, contentType, Map.of());
     }
@@ -92,22 +87,6 @@ public final class NfseHttpClient {
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             return new NfseHttpResponse(
-                response.statusCode(),
-                response.body(),
-                response.headers().map()
-            );
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-            throw new NfseHttpException("Requisicao NFS-e interrompida.", exception);
-        } catch (Exception exception) {
-            throw new NfseHttpException("Nao foi possivel executar requisicao NFS-e.", exception);
-        }
-    }
-
-    private NfseBinaryResponse sendBytes(HttpRequest request) {
-        try {
-            HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            return new NfseBinaryResponse(
                 response.statusCode(),
                 response.body(),
                 response.headers().map()

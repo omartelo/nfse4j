@@ -4,7 +4,6 @@ import io.github.omartelo.nfse4j.core.Ambiente;
 import io.github.omartelo.nfse4j.core.Nfse;
 import io.github.omartelo.nfse4j.core.NfseContext;
 import io.github.omartelo.nfse4j.core.certificate.CertificadoA1;
-import io.github.omartelo.nfse4j.core.http.NfseBinaryResponse;
 import io.github.omartelo.nfse4j.core.http.NfseHttpResponse;
 import io.github.omartelo.nfse4j.core.service.EmissaoNfseResult;
 import io.github.omartelo.nfse4j.core.service.SuccessfulXmlLogger;
@@ -32,10 +31,6 @@ public final class NfseRunner {
     }
 
     public record RespostaSimples(int statusHttp, boolean sucesso, String ambiente, String corpo) {
-    }
-
-    public record PdfResult(int statusHttp, boolean sucesso, String ambiente,
-                            String caminho, int bytes, String corpo) {
     }
 
     public record CertInfo(String alias, String cpfCnpj, String subject, String issuer,
@@ -105,18 +100,6 @@ public final class NfseRunner {
             chaveAcesso, autor, OffsetDateTime.now(), numeroPedido, codigoMotivo, descricaoMotivo, "nfse4j");
         NfseHttpResponse response = nfse(ambiente, cert).contribuinte().cancelar(cancelamento);
         return new RespostaSimples(response.statusCode(), response.isSuccessful(), ambienteLabel(ambiente), response.body());
-    }
-
-    public static PdfResult baixarPdf(String chaveAcesso, Path saida, Ambiente ambiente, CertificadoA1 cert) {
-        NfseBinaryResponse response = nfse(ambiente, cert).danfse().baixarPdf(chaveAcesso, saida);
-        return new PdfResult(
-            response.statusCode(),
-            response.isSuccessful(),
-            ambienteLabel(ambiente),
-            response.isSuccessful() ? saida.toAbsolutePath().normalize().toString() : null,
-            response.body().length,
-            response.isSuccessful() ? null : new String(response.body())
-        );
     }
 
     public static CertificadoA1 carregarCertificado(String caminho, String senha) {
