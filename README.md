@@ -88,7 +88,7 @@ Depois, é só conversar com o agente: _"Emita uma NFS-e de R$ 100 para o CPF 11
 | Ferramenta | O que faz |
 |-----------|-----------|
 | `validar_certificado` | Mostra CNPJ/CPF, emissor e validade do certificado A1. |
-| `emitir_nfse` | Emite uma NFS-e a partir dos dados informados. |
+| `emitir_nfse` | Emite uma NFS-e a partir dos dados informados. Com `dados.substituicao`, emite a substituta de uma nota já emitida (a SEFIN cancela a original). |
 | `emitir_de_exemplo` | Reaproveita uma nota anterior (XML), trocando só tomador/descrição/valor. |
 | `consultar_nfse` | Consulta uma NFS-e pela chave de acesso. |
 | `cancelar_nfse` | Cancela uma NFS-e (evento 101101). |
@@ -129,6 +129,9 @@ java -jar $JAR distribuir-dfe --nsu 0 --json      # notas emitidas contra o CNPJ
 java -jar $JAR consultar-dfe --nsu 42 --json      # XML de um documento da distribuição
 java -jar $JAR consultar-eventos-dfe --chave CHAVE_DA_NFSE --json  # eventos da nota (resumo)
 java -jar $JAR aliquota --municipio 3550308 --servico 01.01.01.000 --json
+# NFS-e substituta: a SEFIN cancela a nota CHAVE_DA_NFSE (evento 105102)
+java -jar $JAR emitir --arquivo nota.json --substituir-chave CHAVE_DA_NFSE \
+  --substituicao-motivo-codigo 99 --substituicao-motivo-descricao "Correcao do valor do servico"
 # Producao (documento fiscal REAL) exige a flag:
 java -jar $JAR emitir --arquivo nota.json --ambiente producao --confirmar-producao
 ```
@@ -195,6 +198,32 @@ raiz do certificado e ir sem máscara (aceita CNPJ alfanumérico).
 
 O `NfseRunner.distribuirDfe` / `consultarDfe` / `consultarEventosDfe` são a versão usada pela CLI e
 pelo MCP: resumo sem XML, até 10 lotes por chamada, eventos de uma chave, e o XML de um NSU sob demanda.
+
+## Emitir NFS-e substituta
+
+Para corrigir uma NFS-e já emitida no padrão nacional, emite-se uma **nota substituta**: uma DPS nova com o
+grupo `subst`, que leva a chave da nota original e o motivo. A SEFIN autoriza a substituta e cancela a
+original, gerando ela mesma o evento 105102 (cancelamento por substituição); não se envia esse evento nem
+se cancela a original antes.
+
+```java
+var request = new EmitirNfseRequest(/* ...dados da nota corrigida... */)
+    .withSubstituicao(new EmitirNfseRequest.SubstituicaoRequest(
+        chaveDaNotaOriginal,             // 50 dígitos
+        "99",                            // 01 a 05 ou 99 (outros)
+        "Correcao do valor do servico")); // opcional, 15 a 255 caracteres
+NfseRunner.emitir(request, Ambiente.HOMOLOGACAO, cert, false);
+```
+
+No JSON da CLI e no `dados` do MCP é o objeto `substituicao` (`chaveSubstituida`, `codigoMotivo`,
+`descricaoMotivo`); na CLI também pelas opções `--substituir-chave`, `--substituicao-motivo-codigo` e
+`--substituicao-motivo-descricao`. Códigos do motivo: 01 desenquadramento do Simples Nacional,
+02 enquadramento no Simples Nacional, 03 inclusão retroativa de imunidade/isenção, 04 exclusão retroativa de
+imunidade/isenção, 05 rejeição pelo tomador ou intermediário responsável pelo recolhimento, 99 outros. Os
+domínios do XSD são validados ao montar o `Dps.Substituicao`.
+
+Em produção, emitir uma substituta **cancela uma nota real** e exige a mesma confirmação explícita das
+outras emissões.
 
 ## Emitir a partir de uma nota de exemplo
 
