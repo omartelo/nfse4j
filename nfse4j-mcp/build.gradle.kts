@@ -14,6 +14,9 @@ dependencies {
 }
 
 tasks.shadowJar {
+    from(rootProject.files("LICENSE", "THIRD-PARTY.md")) {
+        into("META-INF/nfse4j")
+    }
     archiveFileName = "nfse4j-mcp.jar"
     manifest {
         attributes["Main-Class"] = "io.github.omartelo.nfse4j.mcp.NfseMcpServer"

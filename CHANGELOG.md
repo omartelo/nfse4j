@@ -45,7 +45,7 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   depender do `nfse4j-core`, que não usava.
 
 ### Removido
-- **Download do DANFSe pela API oficial (ADN)**, desligada pela NT 008/2026: `DanfseService`,
+- **Download do DANFSe pela API do ADN**, que foi desligada: `DanfseService`,
   `DanfseClient`, `Nfse.danfse()`, `NfseRunner.baixarPdf`/`PdfResult`, `NfseBinaryResponse`,
   `NfseHttpClient.getBytes`, `EndpointResolver.danfse()`/`withEndpoints(...)`, o comando `pdf` do
   CLI e a ferramenta `baixar_danfse` do MCP. Use a geração local (`nfse4j-danfse`, `danfse --xml`

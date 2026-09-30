@@ -1,7 +1,6 @@
 # Checklist de conformidade — NT 008/2026 v1.02 (Especificações Técnicas do DANFSe)
 
 Fonte: [NT 008 v1.02, 14/07/2026 (PDF oficial)](https://www.gov.br/nfse/pt-br/biblioteca/documentacao-tecnica/rtc/nt-008-se-cgnfse-danfse-20260714-v1-02.pdf).
-A API oficial de geração do DANFSe (`adn.nfse.gov.br/danfse`) será **sobrestada em 03/08/2026**.
 
 Legenda de status: ✅ implementado · 🟡 parcial · ❌ pendente
 

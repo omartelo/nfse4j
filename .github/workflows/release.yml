@@ -33,6 +33,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           gh release create "${GITHUB_REF_NAME}" \
             --title "${GITHUB_REF_NAME}" \
-            --notes "Servidor MCP e CLI da versao ${VERSION}. Veja o CHANGELOG.md. O nfse4j-core e distribuido pelo Maven Central." \
+            --notes "Servidor MCP e CLI da versao ${VERSION}. Veja o CHANGELOG.md. O nfse4j-core e o nfse4j-danfse sao distribuidos pelo Maven Central. Componentes de terceiros agregados nos jars: THIRD-PARTY.md." \
             "nfse4j-mcp-${VERSION}.jar" \
-            "nfse4j-cli-${VERSION}.jar"
+            "nfse4j-cli-${VERSION}.jar" \
+            THIRD-PARTY.md

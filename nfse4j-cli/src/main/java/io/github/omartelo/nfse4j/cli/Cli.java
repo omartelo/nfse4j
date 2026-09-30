@@ -102,7 +102,6 @@ public final class Cli {
         emit(a, result);
     }
 
-    // Gera o DANFSe localmente a partir do XML autorizado da NFS-e (nao baixa da API oficial).
     private static void danfse(Args a) throws Exception {
         String xml = Files.readString(Path.of(a.required("xml")));
         Path saida = Path.of(a.getOr("saida", "danfse.pdf"));

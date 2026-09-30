@@ -142,8 +142,6 @@ O fluxo mais simples para quem já emite: aponte uma nota anterior (XML de DPS o
 
 ## DANFSe (PDF) — geração local
 
-> A API oficial de download do DANFSe foi desligada (Nota Técnica SE/CGNFS-e nº 008/2026). Cada emissor gera o DANFSe localmente a partir do XML autorizado da NFS-e.
-
 O módulo `nfse4j-danfse` gera o PDF do DANFSe **localmente** a partir do XML da NFS-e (o `<NFSe>` que a SEFIN devolve na emissão, no campo `nfseXmlGZipB64`).
 
 ```java
@@ -203,4 +201,4 @@ byte[] pdf = DanfseGenerator.gerarPdf(nfseXml, false, cfg, Path.of("danfse.pdf")
 
 [MIT](LICENSE) © Rafael Matos (projeto original, `nfse-java-mcp`), omartelo
 
-O `nfse4j-core` é zero-dependências. O `nfse4j-danfse` depende de **OpenHTMLtoPDF** (LGPL-2.1), **Apache PDFBox** (Apache-2.0) e **ZXing** (Apache-2.0) — todas dependências de runtime, sem afetar a licença MIT deste código.
+O `nfse4j-core` é zero-dependências. O `nfse4j-danfse` depende de **OpenHTMLtoPDF** (LGPL-2.1), **Apache PDFBox** (Apache-2.0) e **ZXing** (Apache-2.0) — todas dependências de runtime, sem afetar a licença MIT deste código. Os fat jars do CLI e do MCP agregam essas e outras bibliotecas; a lista e as licenças estão em [`THIRD-PARTY.md`](THIRD-PARTY.md).
