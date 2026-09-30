@@ -21,11 +21,10 @@ class CertificadoA1Test {
 
     @Test
     void shouldLoadPkcs12CertificateAndExposeSafeMetadata() throws Exception {
-        char[] password = "senha-teste".toCharArray();
         Path certificatePath = tempDir.resolve("certificado-teste.p12");
-        TestPkcs12Factory.create(certificatePath, password, "nfse-test", "12345678000195");
+        TestPkcs12Factory.create(certificatePath, TestPkcs12Factory.SENHA, "nfse-test", "12345678000195");
 
-        CertificadoA1 certificado = CertificadoA1.fromFile(certificatePath, password);
+        CertificadoA1 certificado = CertificadoA1.fromFile(certificatePath, TestPkcs12Factory.SENHA);
 
         assertEquals("nfse-test", certificado.alias());
         assertTrue(certificado.subject().contains("12345678000195"));
@@ -36,11 +35,10 @@ class CertificadoA1Test {
 
     @Test
     void shouldExtractAlphanumericCnpjFromSubject() throws Exception {
-        char[] password = "senha-teste".toCharArray();
         Path certificatePath = tempDir.resolve("certificado-alfanumerico.p12");
-        TestPkcs12Factory.create(certificatePath, password, "nfse-test", "12ABC34501DE35");
+        TestPkcs12Factory.create(certificatePath, TestPkcs12Factory.SENHA, "nfse-test", "12ABC34501DE35");
 
-        CertificadoA1 certificado = CertificadoA1.fromFile(certificatePath, password);
+        CertificadoA1 certificado = CertificadoA1.fromFile(certificatePath, TestPkcs12Factory.SENHA);
 
         assertEquals("12ABC34501DE35", certificado.cpfCnpj().orElseThrow());
     }
@@ -62,10 +60,9 @@ class CertificadoA1Test {
 
     @Test
     void shouldCreateSslContextFromCertificate() throws Exception {
-        char[] password = "senha-teste".toCharArray();
         Path certificatePath = tempDir.resolve("certificado-teste.p12");
-        TestPkcs12Factory.create(certificatePath, password, "nfse-test", "12345678000195");
-        CertificadoA1 certificado = CertificadoA1.fromFile(certificatePath, password);
+        TestPkcs12Factory.create(certificatePath, TestPkcs12Factory.SENHA, "nfse-test", "12345678000195");
+        CertificadoA1 certificado = CertificadoA1.fromFile(certificatePath, TestPkcs12Factory.SENHA);
 
         SSLContext sslContext = SSLContextFactory.create(certificado);
 
