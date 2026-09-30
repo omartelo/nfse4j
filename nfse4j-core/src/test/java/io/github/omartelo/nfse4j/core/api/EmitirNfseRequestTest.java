@@ -145,5 +145,36 @@ class EmitirNfseRequestTest {
         assertTrue(ex.getMessage().contains("codigoMotivo"), ex.getMessage());
     }
 
+    @Test
+    void mapeiaInformacoesComplementaresParaDps() {
+        String texto = "O MEI não está sujeito à retenção de ISS (Resolução CGSN 140/2018, art. 103, IV)";
+
+        Dps dps = comInformacoesComplementares(texto).toDps("99999999000191");
+
+        assertEquals(new Dps.InformacoesComplementares(texto), dps.infDps().servico().informacoesComplementares());
+    }
+
+    @Test
+    void semInformacoesComplementaresDpsFicaSemInfoCompl() {
+        assertNull(valida().toDps("99999999000191").infDps().servico().informacoesComplementares());
+    }
+
+    @Test
+    void informacoesComplementaresForaDoDominioFalha() {
+        EmitirNfseRequest req = comInformacoesComplementares("x".repeat(2001));
+
+        var ex = assertThrows(IllegalArgumentException.class, () -> req.toDps("99999999000191"));
+        assertTrue(ex.getMessage().contains("2000"), ex.getMessage());
+    }
+
+    private static EmitirNfseRequest comInformacoesComplementares(String texto) {
+        return new EmitirNfseRequest(
+            null, "3550308", "00900", 5L, null, new BigDecimal("100.00"),
+            new PrestadorRequest("12345678000199", null, null, null, null, 2, null, 0),
+            new TomadorRequest(null, "11144477735", "Fulano", null, null, null, null, null, null, null, null),
+            new ServicoRequest(null, "010101", null, "Servico de teste", null, texto),
+            new TributacaoRequest(1, 1, 0, null));
+    }
+
     private static final String CHAVE_SUBSTITUIDA = "35503082123456780001990000000000000050261234567890";
 }
