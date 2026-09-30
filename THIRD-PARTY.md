@@ -2,8 +2,20 @@
 
 Os fat jars `nfse4j-cli-<versao>.jar` e `nfse4j-mcp-<versao>.jar` publicados nas GitHub Releases
 agregam, além do código MIT do nfse4j, os componentes abaixo. Os módulos `nfse4j-core` e
-`nfse4j-danfse` publicados no Maven Central não agregam nada: declaram as bibliotecas como
-dependências.
+`nfse4j-danfse` publicados no Maven Central não agregam bibliotecas: declaram-nas como
+dependências. O `nfse4j-core` agrega apenas os XSDs oficiais descritos na seção seguinte.
+
+## nfse4j-core (e, por consequência, os fat jars)
+
+| Componente | Licença | Fonte |
+|---|---|---|
+| XSDs da NFS-e Nacional v1.01 (2026-02-09): `DPS`, `pedRegEvento`, `tiposComplexos`, `tiposEventos`, `tiposSimples` | Documento oficial do governo federal, redistribuído | https://www.gov.br/nfse/pt-br/biblioteca/documentacao-tecnica/documentacao-atual (pacote `nfse-esquemas_xsd-v1-01-20260209.zip`, sha256 `e7935cbd9470527c6cc32984c1b2263e614183bf0139ce2733eaaed2de9a8072`) |
+| `xmldsig-core-schema.xsd` (XML Signature, incluso no mesmo pacote) | W3C Software and Document License | https://www.w3.org/TR/xmldsig-core/ |
+
+Os arquivos ficam em `nfse4j-core/src/main/resources/io/github/omartelo/nfse4j/core/xml/xsd/`, copiados
+byte a byte, com uma única alteração local: o pattern de `TSSerieDPS` em `tiposSimples_v1.01.xsd`
+perdeu as âncoras `^`/`$`, que em regex de XML Schema são literais e faziam toda série ser recusada
+(ver comentário no arquivo).
 
 ## nfse4j-cli e nfse4j-mcp
 

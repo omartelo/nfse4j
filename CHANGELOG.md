@@ -5,6 +5,13 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+### Adicionado
+- **Validação contra o XSD oficial antes do envio.** A DPS (em `emitir`, `emitirDetalhado` e
+  `emitirXml`) e o pedido de cancelamento são validados contra os XSDs da NFS-e Nacional v1.01, já
+  assinados, antes de ir para a SEFIN. Violação lança `XmlSchemaValidationException`, com linha,
+  coluna, elemento e mensagem do schema; nada é enviado. `XmlSchemaValidator` é público para validar
+  DPS e pedido de registro de evento avulsos.
+
 ### Alterado
 - O workflow de release passa a publicar o `nfse4j-core` e o `nfse4j-danfse` no Maven Central ao
   receber uma tag `v*`, depois de conferir que a tag bate com a versão do `gradle.properties`.
