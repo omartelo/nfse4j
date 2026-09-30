@@ -1,12 +1,12 @@
-# nfse-java-mcp
+# nfse4j
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.rafael-matos-dev/nfse-sdk?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.rafael-matos-dev/nfse-sdk)
-[![CI](https://github.com/rafael-matos-dev/nfse-java-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/rafael-matos-dev/nfse-java-mcp/actions/workflows/ci.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.omartelo/nfse4j-core?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.omartelo/nfse4j-core)
+[![CI](https://github.com/omartelo/nfse4j/actions/workflows/ci.yml/badge.svg)](https://github.com/omartelo/nfse4j/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Emita NFS-e Nacional pelo seu agente de IA — ou direto do seu código Java.**
 
-No coração, `nfse-java-mcp` é um **SDK Java** (zero dependências de runtime) para a **NFS-e Nacional** (padrão nacional brasileiro da Nota Fiscal de Serviço eletrônica). Sobre esse motor vêm duas portas de entrada: um **servidor MCP**, para um agente de IA emitir notas conversando (a pessoa só aponta o certificado, dá os dados do tomador — ou uma nota de exemplo — a descrição e o valor), e uma **CLI**, para o terminal. As três camadas usam o mesmo núcleo.
+No coração, `nfse4j` é um **SDK Java** (zero dependências de runtime) para a **NFS-e Nacional** (padrão nacional brasileiro da Nota Fiscal de Serviço eletrônica). Sobre esse motor vêm duas portas de entrada: um **servidor MCP**, para um agente de IA emitir notas conversando (a pessoa só aponta o certificado, dá os dados do tomador — ou uma nota de exemplo — a descrição e o valor), e uma **CLI**, para o terminal. As três camadas usam o mesmo núcleo.
 
 > ⚠️ **Documento fiscal real.** O padrão é **homologação** (produção restrita, ambiente de teste). Emitir em **produção** cria um documento fiscal com efeito tributário real e exige confirmação explícita (`confirmarProducao=true` / `--confirmar-producao`).
 
@@ -16,32 +16,32 @@ As bibliotecas Java de NFS-e existentes atendem padrões municipais antigos ou s
 
 ## Arquitetura: um motor, três portas
 
-O `nfse-sdk` é o motor. O `nfse-mcp` e o `nfse-cli` são camadas finas por cima dele — não reimplementam nada, só expõem o SDK para públicos diferentes.
+O `nfse4j-core` é o motor. O `nfse4j-mcp` e o `nfse4j-cli` são camadas finas por cima dele — não reimplementam nada, só expõem o SDK para públicos diferentes.
 
 ```
-   agente de IA            terminal            seu código Java
-        │                     │                       │
-  ┌─────▼─────┐         ┌─────▼─────┐                 │
-  │ nfse-mcp  │         │ nfse-cli  │                 │
-  │ (serv MCP)│         │  (CLI)    │                 │
-  └─────┬─────┘         └─────┬─────┘                 │
-        └──────────┬──────────┴─────────────────────-┘
-                   │
-       ┌───────────┴───────────┐
-       │                       │
-┌──────▼──────┐        ┌───────▼───────┐
-│  nfse-sdk   │        │  nfse-danfse  │  ← gera o PDF do DANFSe local
-│  (zero-dep) │        │  (HTML→PDF)   │
-└─────────────┘        └───────────────┘
+   agente de IA              terminal              seu código Java
+        │                       │                         │
+  ┌─────▼──────┐          ┌─────▼──────┐                  │
+  │ nfse4j-mcp │          │ nfse4j-cli │                  │
+  │ (serv MCP) │          │   (CLI)    │                  │
+  └─────┬──────┘          └─────┬──────┘                  │
+        └───────────┬───────────┴─────────────────────────┘
+                    │
+        ┌───────────┴────────────┐
+        │                        │
+┌───────▼───────┐       ┌────────▼────────┐
+│  nfse4j-core  │       │  nfse4j-danfse  │  ← gera o PDF do DANFSe local
+│  (zero-dep)   │       │   (HTML→PDF)    │
+└───────────────┘       └─────────────────┘
    ↑ Maven Central
 ```
 
 | Módulo | O que é | Para quem | Distribuição |
 |--------|---------|-----------|--------------|
-| **`nfse-sdk`** | a biblioteca/motor (emissão, consulta, cancelamento) | devs que integram em Java | Maven Central |
-| **`nfse-danfse`** | gera o PDF do DANFSe localmente a partir do XML | devs / MCP / CLI | Maven Central |
-| **`nfse-mcp`** | servidor MCP sobre o SDK | agentes de IA | jar no GitHub Releases |
-| **`nfse-cli`** | CLI sobre o SDK | humanos e scripts | jar no GitHub Releases |
+| **`nfse4j-core`** | a biblioteca/motor (emissão, consulta, cancelamento) | devs que integram em Java | Maven Central |
+| **`nfse4j-danfse`** | gera o PDF do DANFSe localmente a partir do XML | devs / MCP / CLI | Maven Central |
+| **`nfse4j-mcp`** | servidor MCP sobre o SDK | agentes de IA | jar no GitHub Releases |
+| **`nfse4j-cli`** | CLI sobre o SDK | humanos e scripts | jar no GitHub Releases |
 
 ## Requisitos
 
@@ -51,7 +51,7 @@ O `nfse-sdk` é o motor. O `nfse-mcp` e o `nfse-cli` são camadas finas por cima
 
 ## Instalação
 
-A forma mais rápida: baixe os jars prontos da [última release](https://github.com/rafael-matos-dev/nfse-java-mcp/releases/latest) — `nfse-mcp-<versao>.jar` (servidor MCP) e `nfse-cli-<versao>.jar` (CLI). Não precisa compilar.
+A forma mais rápida: baixe os jars prontos da [última release](https://github.com/omartelo/nfse4j/releases/latest) — `nfse4j-mcp-<versao>.jar` (servidor MCP) e `nfse4j-cli-<versao>.jar` (CLI). Não precisa compilar.
 
 Ou compile do código:
 
@@ -60,8 +60,8 @@ mvn clean package
 ```
 
 Gera os jars executáveis:
-- `nfse-mcp/target/nfse-mcp.jar` — servidor MCP
-- `nfse-cli/target/nfse-cli.jar` — CLI
+- `nfse4j-mcp/target/nfse4j-mcp.jar` — servidor MCP
+- `nfse4j-cli/target/nfse4j-cli.jar` — CLI
 
 ## Uso via MCP (destaque)
 
@@ -72,7 +72,7 @@ Registre o servidor no seu cliente MCP. Exemplo de `claude_desktop_config.json`:
   "mcpServers": {
     "nfse": {
       "command": "java",
-      "args": ["-jar", "/caminho/para/nfse-mcp.jar"],
+      "args": ["-jar", "/caminho/para/nfse4j-mcp.jar"],
       "env": {
         "NFSE_CERT_PATH": "/caminho/para/seu-certificado.pfx",
         "NFSE_CERT_PASSWORD": "sua-senha"
@@ -101,7 +101,7 @@ Todas aceitam `ambiente` (`homologacao` por padrão) e, nas operações de escri
 ## Uso via CLI
 
 ```bash
-JAR=nfse-cli/target/nfse-cli.jar
+JAR=nfse4j-cli/target/nfse4j-cli.jar
 export NFSE_CERT_PATH=/caminho/cert.pfx NFSE_CERT_PASSWORD=senha
 
 java -jar $JAR cert --json
@@ -120,8 +120,8 @@ Disponível no Maven Central:
 
 ```xml
 <dependency>
-  <groupId>io.github.rafael-matos-dev</groupId>
-  <artifactId>nfse-sdk</artifactId>
+  <groupId>io.github.omartelo</groupId>
+  <artifactId>nfse4j-core</artifactId>
   <version>0.4.5</version>
 </dependency>
 ```
@@ -136,7 +136,7 @@ var resultado = NfseRunner.emitir(
 System.out.println(resultado.chaveAcesso());
 ```
 
-O `nfse-sdk` não tem dependências de runtime (HTTP via `java.net.http`, assinatura via `javax.xml.crypto.dsig`, mTLS via `SSLContext` do A1).
+O `nfse4j-core` não tem dependências de runtime (HTTP via `java.net.http`, assinatura via `javax.xml.crypto.dsig`, mTLS via `SSLContext` do A1).
 
 ## Emitir a partir de uma nota de exemplo
 
@@ -146,14 +146,14 @@ O fluxo mais simples para quem já emite: aponte uma nota anterior (XML de DPS o
 
 > ⚠️ **A API oficial de download do DANFSe será desligada em 1º/07/2026** (Nota Técnica SE/CGNFS-e nº 008/2026). A partir dessa data, cada emissor gera o DANFSe localmente a partir do XML autorizado da NFS-e. Este projeto já faz isso.
 
-O módulo `nfse-danfse` gera o PDF do DANFSe **localmente** a partir do XML da NFS-e (o `<NFSe>` que a SEFIN devolve na emissão, no campo `nfseXmlGZipB64`). Não depende da API que será descontinuada.
+O módulo `nfse4j-danfse` gera o PDF do DANFSe **localmente** a partir do XML da NFS-e (o `<NFSe>` que a SEFIN devolve na emissão, no campo `nfseXmlGZipB64`). Não depende da API que será descontinuada.
 
 ```java
 // XML autorizado da NFS-e (string)
 byte[] pdf = DanfseGenerator.gerarPdf(nfseXml, /* producao */ false, Path.of("danfse.pdf"));
 ```
 
-CLI: `java -jar nfse-cli.jar danfse --xml nota.xml --saida danfse.pdf`
+CLI: `java -jar nfse4j-cli.jar danfse --xml nota.xml --saida danfse.pdf`
 MCP: ferramenta `gerar_danfse` (aceita o XML, um arquivo, ou o `nfseXmlGZipB64`).
 
 O layout segue o padrão nacional (NT 008): logo oficial da NFS-e, aviso **"NFS-e SEM VALIDADE JURÍDICA"** em homologação, e a seção **IBS/CBS** (NT 009) quando presente no XML. Render via HTML/CSS → PDF (OpenHTMLtoPDF) + QR Code (ZXing).
@@ -201,6 +201,6 @@ byte[] pdf = DanfseGenerator.gerarPdf(nfseXml, false, cfg, Path.of("danfse.pdf")
 
 ## Licença
 
-[MIT](LICENSE) © Rafael Matos
+[MIT](LICENSE) © Rafael Matos (projeto original, `nfse-java-mcp`), omartelo
 
-O `nfse-sdk` é zero-dependências. O `nfse-danfse` depende de **OpenHTMLtoPDF** (LGPL-2.1), **Apache PDFBox** (Apache-2.0) e **ZXing** (Apache-2.0) — todas dependências de runtime, sem afetar a licença MIT deste código.
+O `nfse4j-core` é zero-dependências. O `nfse4j-danfse` depende de **OpenHTMLtoPDF** (LGPL-2.1), **Apache PDFBox** (Apache-2.0) e **ZXing** (Apache-2.0) — todas dependências de runtime, sem afetar a licença MIT deste código.

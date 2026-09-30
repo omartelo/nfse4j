@@ -5,6 +5,16 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+### Alterado
+- **Projeto renomeado para `nfse4j`** (antes `nfse-java-mcp`), mantido a partir deste fork. Mudanças
+  incompatíveis para quem consome:
+  - groupId `io.github.rafael-matos-dev` → `io.github.omartelo`.
+  - Módulos: `nfse-sdk` → `nfse4j-core`, `nfse-danfse` → `nfse4j-danfse`, `nfse-cli` → `nfse4j-cli`,
+    `nfse-mcp` → `nfse4j-mcp` (jars das releases acompanham).
+  - Pacotes: `br.com.nfse.sdk` → `io.github.omartelo.nfse4j.core`; `br.com.nfse.{danfse,cli,mcp}` →
+    `io.github.omartelo.nfse4j.{danfse,cli,mcp}`.
+  - `verAplic` enviado na DPS/eventos e `serverInfo` do MCP passam a ser `nfse4j`.
+
 ## [0.4.5] - 2026-06-25
 
 ### Adicionado
@@ -100,7 +110,7 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - `nfse-cli` — CLI para humanos e agentes que rodam shell.
 - Homologação por padrão; produção exige confirmação explícita.
 
-[Não lançado]: https://github.com/rafael-matos-dev/nfse-java-mcp/compare/v0.4.5...HEAD
+[Não lançado]: https://github.com/omartelo/nfse4j/compare/v0.4.5...HEAD
 [0.4.5]: https://github.com/rafael-matos-dev/nfse-java-mcp/releases/tag/v0.4.5
 [0.4.4]: https://github.com/rafael-matos-dev/nfse-java-mcp/releases/tag/v0.4.4
 [0.4.3]: https://github.com/rafael-matos-dev/nfse-java-mcp/releases/tag/v0.4.3

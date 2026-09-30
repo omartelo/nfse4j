@@ -4,8 +4,8 @@ Contribuições são bem-vindas! Algumas diretrizes:
 
 ## Desenvolvimento
 
-- Java 21, UTF-8, 4 espaços de indentação. Pacote raiz `br.com.nfse`.
-- Mantenha o `nfse-sdk` **sem dependências de runtime** (só JDK).
+- Java 21, UTF-8, 4 espaços de indentação. Pacote raiz `io.github.omartelo.nfse4j`.
+- Mantenha o `nfse4j-core` **sem dependências de runtime** (só JDK).
 - Rode os testes antes de abrir PR: `mvn test`.
 - Testes não devem exigir certificado real — gere material de teste com `TestPkcs12Factory`.
 
@@ -13,7 +13,7 @@ Contribuições são bem-vindas! Algumas diretrizes:
 
 ```bash
 mvn clean install          # build + testes dos 3 modulos
-mvn -pl nfse-sdk test      # so o SDK
+mvn -pl nfse4j-core test      # so o SDK
 ```
 
 ## Segurança — leia antes de commitar

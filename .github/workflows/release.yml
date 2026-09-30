@@ -24,8 +24,8 @@ jobs:
       - name: Renomear jars com a versao da tag
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          cp nfse-mcp/target/nfse-mcp.jar "nfse-mcp-${VERSION}.jar"
-          cp nfse-cli/target/nfse-cli.jar "nfse-cli-${VERSION}.jar"
+          cp nfse4j-mcp/target/nfse4j-mcp.jar "nfse4j-mcp-${VERSION}.jar"
+          cp nfse4j-cli/target/nfse4j-cli.jar "nfse4j-cli-${VERSION}.jar"
       - name: Criar GitHub Release com os jars
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -33,6 +33,6 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           gh release create "${GITHUB_REF_NAME}" \
             --title "${GITHUB_REF_NAME}" \
-            --notes "Servidor MCP e CLI da versao ${VERSION}. Veja o CHANGELOG.md. O nfse-sdk e distribuido pelo Maven Central." \
-            "nfse-mcp-${VERSION}.jar" \
-            "nfse-cli-${VERSION}.jar"
+            --notes "Servidor MCP e CLI da versao ${VERSION}. Veja o CHANGELOG.md. O nfse4j-core e distribuido pelo Maven Central." \
+            "nfse4j-mcp-${VERSION}.jar" \
+            "nfse4j-cli-${VERSION}.jar"

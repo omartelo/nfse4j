@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/rafael-matos-dev/nfse-java-mcp/schemas/emitir-nfse.request.schema.json",
+  "$id": "https://github.com/omartelo/nfse4j/schemas/emitir-nfse.request.schema.json",
   "title": "EmitirNfseRequest",
   "description": "Payload de emissao de NFS-e Nacional usado pelas ferramentas emitir (CLI/MCP/SDK).",
   "type": "object",
