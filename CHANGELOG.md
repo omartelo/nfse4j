@@ -44,8 +44,8 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   vez de gerar um XML que a SEFIN recusaria.
 - **Reemissão a partir de nota de exemplo perdia grupos da DPS em silêncio.** O leitor ignorava
   `cMotivoEmisTI`, `chNFSeRej`, `subst`, `interm`, `IBSCBS`, `cPaisPrestacao`, `cIntContrib`, `comExt`,
-  `obra`, `atvEvento`, `infoCompl` e os documentos de `vDedRed`, e a nota saía sem eles. Agora a leitura
-  falha com `DpsXmlException` nomeando os grupos presentes.
+  `obra`, `atvEvento` e `infoCompl`, e a nota saía sem eles. Agora a leitura falha com
+  `DpsXmlException` nomeando os grupos presentes.
 - **Reemissão a partir de nota de exemplo saía com tributação diferente da original.** O leitor
   descartava `vReceb`, `vDescCondIncond`, `vDedRed` (`pDR`/`vDR`), `cPaisResult`, `tpImunidade`,
   `exigSusp`, `BM`, `pAliq` e o grupo `tribFed` inteiro (PIS/COFINS e retenções de CP, IRRF e CSLL).
@@ -61,6 +61,11 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   endereço no exterior (`endExt`). O `Dps.Prestador`, o `Dps.Tomador` e o `Dps.Endereco` passam a
   modelar esses campos, lidos e gerados na ordem do XSD. Com tomador sobrescrito, nada do tomador do
   exemplo passa para o novo.
+- **Reemissão a partir de nota de exemplo com documentos de dedução (`vDedRed/documentos`).** O
+  `Dps.DeducaoReducao` passa a modelar a lista de `docDedRed` (identificação do documento, tipo,
+  descrição, data, valores e fornecedor), lida e gerada na ordem do XSD, e o exemplo deixa de ser
+  recusado. Com `valorServico` sobrescrito, a reemissão recusa a troca listando `vDedutivelRedutivel` e
+  `vDeducaoReducao`.
 
 ### Alterado
 - **O `nfse4j-core` passa a depender do Gson** (Apache-2.0), para ler o JSON das APIs do ADN. Deixa

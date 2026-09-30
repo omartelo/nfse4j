@@ -121,6 +121,7 @@ public final class DpsReemissao {
         }
         if (valores.deducaoReducao() != null) {
             adicionarSePresente(campos, "vDR", valores.deducaoReducao().valor());
+            campos.addAll(valoresAbsolutosDosDocumentosDeDeducao(valores.deducaoReducao().documentos()));
         }
         Dps.Tributacao tributacao = valores.tributacao();
         if (tributacao.beneficioMunicipal() != null) {
@@ -144,6 +145,20 @@ public final class DpsReemissao {
         adicionarSePresente(campos, "vRetCP", federal.valorRetidoCp());
         adicionarSePresente(campos, "vRetIRRF", federal.valorRetidoIrrf());
         adicionarSePresente(campos, "vRetCSLL", federal.valorRetidoCsll());
+        return campos;
+    }
+
+    private static List<String> valoresAbsolutosDosDocumentosDeDeducao(List<Dps.DocumentoDeducao> documentos) {
+        List<String> campos = new ArrayList<>();
+        if (documentos == null) {
+            return campos;
+        }
+        if (documentos.stream().anyMatch(documento -> documento.valorDedutivelRedutivel() != null)) {
+            campos.add("vDedutivelRedutivel");
+        }
+        if (documentos.stream().anyMatch(documento -> documento.valorDeducaoReducao() != null)) {
+            campos.add("vDeducaoReducao");
+        }
         return campos;
     }
 

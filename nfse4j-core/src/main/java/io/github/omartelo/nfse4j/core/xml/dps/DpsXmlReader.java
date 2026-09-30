@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -28,8 +29,7 @@ public final class DpsXmlReader {
      */
     private static final List<String> GRUPOS_NAO_SUPORTADOS = List.of(
         "cMotivoEmisTI", "chNFSeRej", "subst", "interm", "IBSCBS",
-        "cPaisPrestacao", "cIntContrib", "comExt", "obra", "atvEvento", "infoCompl",
-        "vDedRed/documentos"
+        "cPaisPrestacao", "cIntContrib", "comExt", "obra", "atvEvento", "infoCompl"
     );
 
     private DpsXmlReader() {
@@ -195,7 +195,35 @@ public final class DpsXmlReader {
         if (deducaoReducao == null) {
             return null;
         }
-        return new Dps.DeducaoReducao(decimalOrNull(text(deducaoReducao, "pDR")), decimalOrNull(text(deducaoReducao, "vDR")));
+        Element documentos = firstByLocalName(deducaoReducao, "documentos");
+        return new Dps.DeducaoReducao(
+            decimalOrNull(text(deducaoReducao, "pDR")),
+            decimalOrNull(text(deducaoReducao, "vDR")),
+            documentos == null ? null : childrenByLocalName(documentos, "docDedRed").stream()
+                .map(DpsXmlReader::documentoDeducao)
+                .toList()
+        );
+    }
+
+    private static Dps.DocumentoDeducao documentoDeducao(Element doc) {
+        Element nfseMun = firstByLocalName(doc, "NFSeMun");
+        Element nfNfs = firstByLocalName(doc, "NFNFS");
+        return new Dps.DocumentoDeducao(
+            text(doc, "chNFSe"),
+            text(doc, "chNFe"),
+            nfseMun == null ? null : new Dps.NfseMunicipal(
+                text(nfseMun, "cMunNFSeMun"), text(nfseMun, "nNFSeMun"), text(nfseMun, "cVerifNFSeMun")),
+            nfNfs == null ? null : new Dps.NotaFiscalServico(
+                text(nfNfs, "nNFS"), text(nfNfs, "modNFS"), text(nfNfs, "serieNFS")),
+            text(doc, "nDocFisc"),
+            text(doc, "nDoc"),
+            integerOrNull(text(doc, "tpDedRed")),
+            text(doc, "xDescOutDed"),
+            dateOrNull(text(doc, "dtEmiDoc")),
+            decimalOrNull(text(doc, "vDedutivelRedutivel")),
+            decimalOrNull(text(doc, "vDeducaoReducao")),
+            tomador(firstByLocalName(doc, "fornec"))
+        );
     }
 
     private static Dps.ExigibilidadeSuspensa exigibilidadeSuspensa(Element exigSusp) {
@@ -296,6 +324,17 @@ public final class DpsXmlReader {
             }
         }
         return null;
+    }
+
+    private static List<Element> childrenByLocalName(Element scope, String localName) {
+        List<Element> elements = new ArrayList<>();
+        NodeList children = scope.getChildNodes();
+        for (int index = 0; index < children.getLength(); index++) {
+            if (children.item(index) instanceof Element element && localName.equals(localName(element))) {
+                elements.add(element);
+            }
+        }
+        return elements;
     }
 
     /** Resolve um caminho de local names separados por '/', cada passo com {@link #firstByLocalName}. */

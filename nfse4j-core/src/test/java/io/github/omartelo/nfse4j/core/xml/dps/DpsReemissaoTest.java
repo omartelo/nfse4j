@@ -177,11 +177,7 @@ class DpsReemissaoTest {
             Arguments.of("obra", "</cServ>", "</cServ><obra><cObra>123456</cObra></obra>"),
             Arguments.of("atvEvento", "</cServ>",
                 "</cServ><atvEvento><xNome>Evento</xNome><dtIni>2026-01-10</dtIni><dtFim>2026-01-11</dtFim></atvEvento>"),
-            Arguments.of("infoCompl", "</cServ>", "</cServ><infoCompl><xInfComp>Observacao</xInfComp></infoCompl>"),
-            Arguments.of("vDedRed/documentos", "</vServPrest>",
-                "</vServPrest><vDedRed><documentos><docDedRed><nDoc>1</nDoc><tpDedRed>1</tpDedRed>"
-                    + "<dtEmiDoc>2026-01-10</dtEmiDoc><vDedutivelRedutivel>50.00</vDedutivelRedutivel>"
-                    + "<vDeducaoReducao>50.00</vDeducaoReducao></docDedRed></documentos></vDedRed>")
+            Arguments.of("infoCompl", "</cServ>", "</cServ><infoCompl><xInfComp>Observacao</xInfComp></infoCompl>")
         );
     }
 
@@ -429,5 +425,61 @@ class DpsReemissaoTest {
         String xml = reemitirXmlValidandoXsd(exemplo, novoTomador);
 
         assertTrue(xml.contains("<toma><CPF>55566677788</CPF><xNome>Novo Tomador</xNome></toma>"), xml);
+    }
+
+    private static String docDedRed(String identificacao, String depoisDaIdentificacao) {
+        return "<docDedRed>" + identificacao + depoisDaIdentificacao + "</docDedRed>";
+    }
+
+    private static String docDedRed(String identificacao) {
+        return docDedRed(identificacao, "<tpDedRed>2</tpDedRed><dtEmiDoc>2026-01-10</dtEmiDoc>"
+            + "<vDedutivelRedutivel>80.00</vDedutivelRedutivel><vDeducaoReducao>50.00</vDeducaoReducao>");
+    }
+
+    private static String documentosDedRed(String... docs) {
+        return "<vDedRed><documentos>" + String.join("", docs) + "</documentos></vDedRed>";
+    }
+
+    static Stream<Arguments> documentosDeDeducao() {
+        return Stream.of(
+            Arguments.of("chNFSe", documentosDedRed(docDedRed("<chNFSe>" + "3".repeat(50) + "</chNFSe>"))),
+            Arguments.of("chNFe", documentosDedRed(docDedRed("<chNFe>" + "4".repeat(44) + "</chNFe>"))),
+            Arguments.of("NFSeMun", documentosDedRed(docDedRed("<NFSeMun><cMunNFSeMun>3550308</cMunNFSeMun>"
+                + "<nNFSeMun>" + "5".repeat(15) + "</nNFSeMun><cVerifNFSeMun>AB12CD</cVerifNFSeMun></NFSeMun>"))),
+            Arguments.of("NFNFS", documentosDedRed(docDedRed("<NFNFS><nNFS>0001234</nNFS>"
+                + "<modNFS>" + "0".repeat(14) + "1</modNFS><serieNFS>A1</serieNFS></NFNFS>"))),
+            Arguments.of("nDocFisc", documentosDedRed(docDedRed("<nDocFisc>DF-77</nDocFisc>"))),
+            Arguments.of("nDoc", documentosDedRed(docDedRed("<nDoc>RECIBO-1</nDoc>"))),
+            Arguments.of("xDescOutDed e fornec", documentosDedRed(docDedRed("<nDoc>RECIBO-2</nDoc>",
+                "<tpDedRed>99</tpDedRed><xDescOutDed>Outra deducao</xDescOutDed><dtEmiDoc>2026-01-10</dtEmiDoc>"
+                    + "<vDedutivelRedutivel>80.00</vDedutivelRedutivel><vDeducaoReducao>50.00</vDeducaoReducao>"
+                    + "<fornec><CNPJ>98765432000198</CNPJ><IM>IM555</IM><xNome>Fornecedor Ltda</xNome>"
+                    + END_NACIONAL + "<fone>1155556666</fone><email>f@exemplo.com</email></fornec>"))),
+            Arguments.of("varios documentos", documentosDedRed(
+                docDedRed("<nDoc>RECIBO-1</nDoc>"),
+                docDedRed("<chNFe>" + "4".repeat(44) + "</chNFe>"),
+                docDedRed("<nDocFisc>DF-77</nDocFisc>")))
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("documentosDeDeducao")
+    void reemissaoPreservaDocumentosDeDeducao(String caso, String vDedRed) {
+        String valores = VALOR_SERVICO + vDedRed + trib(ISSQN + RETENCAO_ISSQN, "");
+        Dps exemplo = DpsXmlReader.read(exemploComValores(valores));
+
+        String xml = reemitirXmlValidandoXsd(exemplo, soNumero());
+
+        assertTrue(xml.contains("<valores>" + valores + "</valores>"), xml);
+    }
+
+    @Test
+    void trocaDeValorRecusaExemploComDocumentosDeDeducao() {
+        String exemplo = exemploComValores(VALOR_SERVICO + documentosDedRed(docDedRed("<nDoc>RECIBO-1</nDoc>"))
+            + trib(ISSQN + RETENCAO_ISSQN, ""));
+
+        DpsXmlException erro = assertThrows(DpsXmlException.class, () -> reemitirComNovoValor(exemplo));
+
+        assertTrue(erro.getMessage().contains("vDedutivelRedutivel, vDeducaoReducao"), erro.getMessage());
     }
 }

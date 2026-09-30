@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public record Dps(String versao, InfDps infDps) {
@@ -148,8 +149,44 @@ public record Dps(String versao, InfDps infDps) {
     public record Descontos(BigDecimal incondicionado, BigDecimal condicionado) {
     }
 
-    /** vDedRed por percentual (pDR) ou por valor (vDR); o XSD aceita so um dos dois. */
-    public record DeducaoReducao(BigDecimal percentual, BigDecimal valor) {
+    /** vDedRed por percentual (pDR), por valor (vDR) ou por documentos; o XSD aceita so uma das tres formas. */
+    public record DeducaoReducao(BigDecimal percentual, BigDecimal valor, List<DocumentoDeducao> documentos) {
+        public DeducaoReducao {
+            documentos = documentos == null ? null : List.copyOf(documentos);
+        }
+
+        public DeducaoReducao(BigDecimal percentual, BigDecimal valor) {
+            this(percentual, valor, null);
+        }
+    }
+
+    /**
+     * docDedRed: documento que embasa a deducao/reducao, identificado por um so entre chave de NFS-e,
+     * chave de NF-e, NFS-e municipal, NF/NFS, numero de documento fiscal ou numero de documento. O
+     * fornecedor segue o mesmo tipo do tomador (TCInfoPessoa no XSD).
+     */
+    public record DocumentoDeducao(
+        String chaveNfse,
+        String chaveNfe,
+        NfseMunicipal nfseMunicipal,
+        NotaFiscalServico notaFiscalServico,
+        String numeroDocumentoFiscal,
+        String numeroDocumento,
+        Integer tipo,
+        String descricaoOutraDeducao,
+        LocalDate dataEmissao,
+        BigDecimal valorDedutivelRedutivel,
+        BigDecimal valorDeducaoReducao,
+        Tomador fornecedor
+    ) {
+    }
+
+    /** NFSeMun: NFS-e emitida fora do Sistema Nacional. */
+    public record NfseMunicipal(String codigoMunicipio, String numero, String codigoVerificacao) {
+    }
+
+    /** NFNFS: nota fiscal ou nota fiscal de servico em papel. */
+    public record NotaFiscalServico(String numero, String modelo, String serie) {
     }
 
     public record Tributacao(

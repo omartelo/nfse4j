@@ -13,6 +13,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import java.io.StringWriter;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -57,7 +58,7 @@ public final class DpsXmlBuilder {
         append(parent, "tpEmit", data.tipoEmitente());
         append(parent, "cLocEmi", data.codigoLocalEmissao());
         buildPrestador(parent, data.prestador());
-        buildTomador(parent, data.tomador());
+        buildPessoa(parent, "toma", data.tomador());
         buildServico(parent, data.servico());
         buildValores(parent, data.valores());
     }
@@ -85,20 +86,21 @@ public final class DpsXmlBuilder {
         }
     }
 
-    private void buildTomador(Element parent, Dps.Tomador data) {
-        Element tomador = element(parent, "toma");
-        append(tomador, "CNPJ", data.cnpj());
-        append(tomador, "CPF", data.cpf());
-        append(tomador, "NIF", data.nif());
-        append(tomador, "cNaoNIF", data.codigoNaoNif());
-        append(tomador, "CAEPF", data.caepf());
-        append(tomador, "IM", data.inscricaoMunicipal());
-        append(tomador, "xNome", data.nome());
+    /** TCInfoPessoa do XSD, usado pelo tomador e pelo fornecedor de documento de deducao. */
+    private void buildPessoa(Element parent, String nomeDoGrupo, Dps.Tomador data) {
+        Element pessoa = element(parent, nomeDoGrupo);
+        append(pessoa, "CNPJ", data.cnpj());
+        append(pessoa, "CPF", data.cpf());
+        append(pessoa, "NIF", data.nif());
+        append(pessoa, "cNaoNIF", data.codigoNaoNif());
+        append(pessoa, "CAEPF", data.caepf());
+        append(pessoa, "IM", data.inscricaoMunicipal());
+        append(pessoa, "xNome", data.nome());
         if (data.endereco() != null) {
-            buildEndereco(tomador, data.endereco());
+            buildEndereco(pessoa, data.endereco());
         }
-        append(tomador, "fone", data.telefone());
-        append(tomador, "email", data.email());
+        append(pessoa, "fone", data.telefone());
+        append(pessoa, "email", data.email());
     }
 
     private void buildEndereco(Element parent, Dps.Endereco data) {
@@ -146,12 +148,47 @@ public final class DpsXmlBuilder {
             Element deducaoReducao = element(valores, "vDedRed");
             append(deducaoReducao, "pDR", percentage(data.deducaoReducao().percentual()));
             append(deducaoReducao, "vDR", money(data.deducaoReducao().valor()));
+            buildDocumentosDeducao(deducaoReducao, data.deducaoReducao().documentos());
         }
 
         Element trib = element(valores, "trib");
         buildTributacaoMunicipal(trib, data.tributacao());
         buildTributacaoFederal(trib, data.tributacao().tributacaoFederal());
         buildTotalTributos(trib, data.tributacao());
+    }
+
+    private void buildDocumentosDeducao(Element deducaoReducao, List<Dps.DocumentoDeducao> data) {
+        if (data == null) {
+            return;
+        }
+        Element documentos = element(deducaoReducao, "documentos");
+        for (Dps.DocumentoDeducao documento : data) {
+            Element doc = element(documentos, "docDedRed");
+            append(doc, "chNFSe", documento.chaveNfse());
+            append(doc, "chNFe", documento.chaveNfe());
+            if (documento.nfseMunicipal() != null) {
+                Element nfseMun = element(doc, "NFSeMun");
+                append(nfseMun, "cMunNFSeMun", documento.nfseMunicipal().codigoMunicipio());
+                append(nfseMun, "nNFSeMun", documento.nfseMunicipal().numero());
+                append(nfseMun, "cVerifNFSeMun", documento.nfseMunicipal().codigoVerificacao());
+            }
+            if (documento.notaFiscalServico() != null) {
+                Element nfNfs = element(doc, "NFNFS");
+                append(nfNfs, "nNFS", documento.notaFiscalServico().numero());
+                append(nfNfs, "modNFS", documento.notaFiscalServico().modelo());
+                append(nfNfs, "serieNFS", documento.notaFiscalServico().serie());
+            }
+            append(doc, "nDocFisc", documento.numeroDocumentoFiscal());
+            append(doc, "nDoc", documento.numeroDocumento());
+            append(doc, "tpDedRed", documento.tipo());
+            append(doc, "xDescOutDed", documento.descricaoOutraDeducao());
+            append(doc, "dtEmiDoc", documento.dataEmissao());
+            append(doc, "vDedutivelRedutivel", money(documento.valorDedutivelRedutivel()));
+            append(doc, "vDeducaoReducao", money(documento.valorDeducaoReducao()));
+            if (documento.fornecedor() != null) {
+                buildPessoa(doc, "fornec", documento.fornecedor());
+            }
+        }
     }
 
     private void buildTributacaoMunicipal(Element trib, Dps.Tributacao data) {
