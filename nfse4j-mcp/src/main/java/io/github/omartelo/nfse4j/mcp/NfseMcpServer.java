@@ -119,6 +119,36 @@ public final class NfseMcpServer {
                 return ok(NfseRunner.consultar(exigirTexto(a, "chaveAcesso"), ambiente(a), certificado(a)));
             }));
 
+        tools.add(tool(jsonMapper, "distribuir_dfe",
+            "Lista as NFS-e e eventos em que o CNPJ do certificado e emitente, tomador ou intermediario (distribuicao de DF-e do ADN), a partir do ultimo NSU ja processado. Devolve so o resumo (nsu, tipo, chave); o XML de um documento sai por consultar_dfe. Se concluida=false, chame de novo com nsu=ultimoNsu.",
+            """
+            {"type":"object","properties":{
+              "nsu":{"type":"integer","default":0,"description":"Ultimo NSU ja processado; 0 comeca do inicio."},
+              "cnpjConsulta":{"type":"string","description":"CNPJ (14 caracteres, sem mascara, aceita alfanumerico) de mesma raiz do certificado. Se omitido, usa o do certificado."},
+              "ambiente":{"type":"string","enum":["homologacao","producao"],"default":"homologacao"},
+              "caminhoCertificado":{"type":"string"},"senhaCertificado":{"type":"string"}
+            }}""",
+            (ex, req) -> {
+                Map<String, Object> a = req.arguments();
+                Long nsu = longOrNull(a.get("nsu"), "nsu");
+                return ok(NfseRunner.distribuirDfe(nsu == null ? 0 : nsu, textoOu(a, "cnpjConsulta", null), ambiente(a), certificado(a)));
+            }));
+
+        tools.add(tool(jsonMapper, "consultar_dfe",
+            "Devolve o XML de um documento da distribuicao de DF-e do ADN pelo NSU (obtido em distribuir_dfe).",
+            """
+            {"type":"object","required":["nsu"],"properties":{
+              "nsu":{"type":"integer","description":"NSU do documento."},
+              "cnpjConsulta":{"type":"string","description":"O mesmo cnpjConsulta usado em distribuir_dfe, se houver."},
+              "ambiente":{"type":"string","enum":["homologacao","producao"],"default":"homologacao"},
+              "caminhoCertificado":{"type":"string"},"senhaCertificado":{"type":"string"}
+            }}""",
+            (ex, req) -> {
+                Map<String, Object> a = req.arguments();
+                long nsu = longOrNull(exigir(a, "nsu"), "nsu");
+                return ok(NfseRunner.consultarDfe(nsu, textoOu(a, "cnpjConsulta", null), ambiente(a), certificado(a)));
+            }));
+
         tools.add(tool(jsonMapper, "cancelar_nfse",
             "Cancela uma NFS-e (evento 101101). Producao exige confirmarProducao=true.",
             """
