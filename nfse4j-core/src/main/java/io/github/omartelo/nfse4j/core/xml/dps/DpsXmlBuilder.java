@@ -57,10 +57,21 @@ public final class DpsXmlBuilder {
         append(parent, "dCompet", data.dataCompetencia());
         append(parent, "tpEmit", data.tipoEmitente());
         append(parent, "cLocEmi", data.codigoLocalEmissao());
+        buildSubstituicao(parent, data.substituicao());
         buildPrestador(parent, data.prestador());
         buildPessoa(parent, "toma", data.tomador());
         buildServico(parent, data.servico());
         buildValores(parent, data.valores());
+    }
+
+    private void buildSubstituicao(Element parent, Dps.Substituicao data) {
+        if (data == null) {
+            return;
+        }
+        Element subst = element(parent, "subst");
+        append(subst, "chSubstda", data.chaveSubstituida());
+        append(subst, "cMotivo", data.codigoMotivo());
+        append(subst, "xMotivo", data.descricaoMotivo());
     }
 
     private void buildPrestador(Element parent, Dps.Prestador data) {

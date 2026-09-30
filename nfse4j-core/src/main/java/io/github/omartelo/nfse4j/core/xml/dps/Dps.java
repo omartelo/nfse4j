@@ -27,14 +27,73 @@ public record Dps(String versao, InfDps infDps) {
         Prestador prestador,
         Tomador tomador,
         Servico servico,
-        Valores valores
+        Valores valores,
+        Substituicao substituicao
     ) {
+        public InfDps(
+            String id,
+            int tipoAmbiente,
+            OffsetDateTime dataHoraEmissao,
+            String versaoAplicativo,
+            String serie,
+            long numero,
+            LocalDate dataCompetencia,
+            int tipoEmitente,
+            String codigoLocalEmissao,
+            Prestador prestador,
+            Tomador tomador,
+            Servico servico,
+            Valores valores
+        ) {
+            this(id, tipoAmbiente, dataHoraEmissao, versaoAplicativo, serie, numero, dataCompetencia, tipoEmitente,
+                codigoLocalEmissao, prestador, tomador, servico, valores, null);
+        }
+
         /** Copia trocando apenas o tpAmb. Usado pela SDK para casar o XML com o ambiente do endpoint. */
         public InfDps withTipoAmbiente(int novoTipoAmbiente) {
             return new InfDps(
                 id, novoTipoAmbiente, dataHoraEmissao, versaoAplicativo, serie, numero,
-                dataCompetencia, tipoEmitente, codigoLocalEmissao, prestador, tomador, servico, valores
+                dataCompetencia, tipoEmitente, codigoLocalEmissao, prestador, tomador, servico, valores, substituicao
             );
+        }
+    }
+
+    /**
+     * subst: a DPS substitui a NFS-e {@code chaveSubstituida}; a SEFIN cancela a original gerando o evento
+     * 105102. Dominios do TCSubstituicao (XSD DPS v1.01): chave com 50 digitos, codigo 01-05 ou 99 e
+     * descricao opcional de 15 a 255 caracteres.
+     *
+     * @throws IllegalArgumentException se algum campo sair do dominio do XSD
+     */
+    public record Substituicao(String chaveSubstituida, String codigoMotivo, String descricaoMotivo) {
+        private static final List<String> CODIGOS_MOTIVO = List.of("01", "02", "03", "04", "05", "99");
+        private static final int DESCRICAO_MOTIVO_MIN = 15;
+        private static final int DESCRICAO_MOTIVO_MAX = 255;
+
+        public Substituicao {
+            if (chaveSubstituida == null || !chaveSubstituida.matches("[0-9]{50}")) {
+                throw new IllegalArgumentException(
+                    "chaveSubstituida deve ter 50 digitos (recebido: " + chaveSubstituida + ").");
+            }
+            if (codigoMotivo == null || !CODIGOS_MOTIVO.contains(codigoMotivo)) {
+                throw new IllegalArgumentException("codigoMotivo da substituicao deve ser um de: "
+                    + String.join(", ", CODIGOS_MOTIVO) + " (recebido: " + codigoMotivo + ").");
+            }
+            if (descricaoMotivo != null) {
+                exigirDescricaoMotivoNoDominio(descricaoMotivo);
+            }
+        }
+
+        private static void exigirDescricaoMotivoNoDominio(String descricaoMotivo) {
+            if (descricaoMotivo.isBlank()) {
+                throw new IllegalArgumentException(
+                    "descricaoMotivo da substituicao nao pode ficar em branco; omita o campo se nao houver descricao.");
+            }
+            int tamanho = descricaoMotivo.length();
+            if (tamanho < DESCRICAO_MOTIVO_MIN || tamanho > DESCRICAO_MOTIVO_MAX) {
+                throw new IllegalArgumentException("descricaoMotivo da substituicao deve ter de "
+                    + DESCRICAO_MOTIVO_MIN + " a " + DESCRICAO_MOTIVO_MAX + " caracteres (recebido: " + tamanho + ").");
+            }
         }
     }
 
