@@ -143,6 +143,10 @@ public final class DpsXmlBuilder {
         append(codigoServico, "cTribMun", data.codigoTributacaoMunicipal());
         append(codigoServico, "xDescServ", data.descricao());
         append(codigoServico, "cNBS", data.codigoNbs());
+        if (data.informacoesComplementares() != null) {
+            Element informacoesComplementares = element(servico, "infoCompl");
+            append(informacoesComplementares, "xInfComp", data.informacoesComplementares().texto());
+        }
     }
 
     private void buildValores(Element parent, Dps.Valores data) {

@@ -15,6 +15,15 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   SDK: `EmitirNfseRequest.substituicao` / `withSubstituicao`. MCP: `dados.substituicao` em
   `emitir_nfse`. CLI: `emitir --substituir-chave --substituicao-motivo-codigo
   --substituicao-motivo-descricao`. Em produção vale a mesma confirmação explícita da emissão.
+- **Informações complementares da DPS (`serv/infoCompl/xInfComp`).** `Dps.Servico` ganha
+  `informacoesComplementares` (`Dps.InformacoesComplementares`), gerado como último grupo de `serv`, na
+  ordem do XSD v1.01, e exibido pelo DANFSe em "Informações complementares". O construtor valida o
+  domínio do `TSDescInfCompl` (1 a 2000 caracteres de U+0020 a U+00FF, sem quebra de linha nem espaço
+  nas pontas). Os construtores anteriores de `Dps.Servico` continuam valendo. SDK:
+  `EmitirNfseRequest.ServicoRequest.informacoesComplementares`; no JSON da CLI e no `dados` do MCP,
+  `servico.informacoesComplementares`. Na reemissão a partir de
+  nota de exemplo, o `xInfComp` passa a ser lido e mantido; `idDocTec`, `docRef`, `xPed` e `gItemPed`
+  seguem sem modelo e continuam recusados.
 - **Validação contra o XSD oficial antes do envio.** A DPS (em `emitir`, `emitirDetalhado` e
   `emitirXml`) e os pedidos de registro de evento (cancelamento, análise fiscal e manifestação) são
   validados contra os XSDs da NFS-e Nacional v1.01, já assinados, antes de ir para a SEFIN. Violação

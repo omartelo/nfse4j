@@ -85,7 +85,8 @@ public final class DpsReemissao {
             servico.codigoTributacaoNacional(),
             servico.codigoTributacaoMunicipal(),
             descricao,
-            servico.codigoNbs()
+            servico.codigoNbs(),
+            servico.informacoesComplementares()
         );
     }
 

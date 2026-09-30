@@ -141,7 +141,10 @@ public record EmitirNfseRequest(
             required(servico.codigoTributacaoNacional(), "servico.codigoTributacaoNacional"),
             servico.codigoTributacaoMunicipal(),
             required(servico.descricao(), "servico.descricao"),
-            servico.codigoNbs()
+            servico.codigoNbs(),
+            servico.informacoesComplementares() == null
+                ? null
+                : new Dps.InformacoesComplementares(servico.informacoesComplementares())
         );
     }
 
@@ -231,13 +234,24 @@ public record EmitirNfseRequest(
     ) {
     }
 
+    /** {@code informacoesComplementares} vira o serv/infoCompl/xInfComp; o dominio e o de {@link Dps.InformacoesComplementares}. */
     public record ServicoRequest(
         String codigoLocalPrestacao,
         String codigoTributacaoNacional,
         String codigoTributacaoMunicipal,
         String descricao,
-        String codigoNbs
+        String codigoNbs,
+        String informacoesComplementares
     ) {
+        public ServicoRequest(
+            String codigoLocalPrestacao,
+            String codigoTributacaoNacional,
+            String codigoTributacaoMunicipal,
+            String descricao,
+            String codigoNbs
+        ) {
+            this(codigoLocalPrestacao, codigoTributacaoNacional, codigoTributacaoMunicipal, descricao, codigoNbs, null);
+        }
     }
 
     public record TributacaoRequest(
