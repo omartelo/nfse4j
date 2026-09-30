@@ -70,6 +70,7 @@ public final class ContribuinteService {
             context.certificado()
                 .orElseThrow(() -> new ContribuinteServiceException("Certificado A1 e obrigatorio para cancelar NFS-e."))
         );
+        exigirConformeXsd("Pedido de registro de evento", XmlSchemaValidator.validarPedidoRegistroEvento(signedXml));
         return sefinClient.registrarEventoXml(cancelamento.chaveAcesso(), signedXml);
     }
 

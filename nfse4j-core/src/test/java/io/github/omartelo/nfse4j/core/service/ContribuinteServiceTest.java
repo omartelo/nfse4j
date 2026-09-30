@@ -43,6 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ContribuinteServiceTest {
+    private static final String CHAVE_ACESSO = "31129806211222333000181000000000000001234567890123";
+
     private HttpServer server;
 
     @TempDir
@@ -98,14 +100,14 @@ class ContribuinteServiceTest {
         startServer(exchange -> {
             assertEquals("POST", exchange.getRequestMethod());
             assertEquals(
-                "/SefinNacional/nfse/NFSE123/eventos",
+                "/SefinNacional/nfse/" + CHAVE_ACESSO + "/eventos",
                 exchange.getRequestURI().getPath()
             );
 
             String payload = extractJsonValue(requestBody(exchange), "pedidoRegistroEventoXmlGZipB64");
             String signedXml = XmlPayloadCodec.ungzipBase64(payload);
             // jan/2026: nPedRegEvento removido do Id (TSIdPedRegEvt: PRE[0-9]{56}) — sem o sufixo "001".
-            assertTrue(signedXml.contains("<infPedReg Id=\"PRENFSE123101101\">"));
+            assertTrue(signedXml.contains("<infPedReg Id=\"PRE" + CHAVE_ACESSO + "101101\">"));
             assertTrue(signedXml.contains("<tpAmb>2</tpAmb>"));
             assertTrue(signedXml.contains("<CNPJAutor>12345678000195</CNPJAutor>"));
             assertTrue(signedXml.contains("<e101101><xDesc>Cancelamento de NFS-e</xDesc>"));
@@ -171,6 +173,33 @@ class ContribuinteServiceTest {
         ContribuinteService service = new ContribuinteService(context(certificado()));
 
         assertThrows(XmlSchemaValidationException.class, () -> service.emitirXml(xmlInvalido));
+        assertFalse(enviou.get());
+    }
+
+    @Test
+    void naoEnviaPedidoDeCancelamentoQueFalhaNoXsd() throws Exception {
+        AtomicBoolean enviou = new AtomicBoolean();
+        startServer(exchange -> {
+            enviou.set(true);
+            respond(exchange, 200, "{}");
+        });
+        CancelamentoNfse chaveForaDoLeiaute = new CancelamentoNfse(
+            "123",
+            "12345678000195",
+            OffsetDateTime.parse("2026-06-09T13:10:00-03:00"),
+            1,
+            "2",
+            "Servico nao prestado",
+            "nfse-nacional-kit"
+        );
+        ContribuinteService service = new ContribuinteService(context(certificado()));
+
+        XmlSchemaValidationException exception = assertThrows(
+            XmlSchemaValidationException.class,
+            () -> service.cancelar(chaveForaDoLeiaute)
+        );
+
+        assertTrue(exception.getMessage().contains("chNFSe"), exception.getMessage());
         assertFalse(enviou.get());
     }
 
@@ -301,7 +330,7 @@ class ContribuinteServiceTest {
 
     private static CancelamentoNfse cancelamento() {
         return new CancelamentoNfse(
-            "NFSE123",
+            CHAVE_ACESSO,
             "12.345.678/0001-95",
             OffsetDateTime.parse("2026-06-09T13:10:00-03:00"),
             1,
