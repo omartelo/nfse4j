@@ -24,6 +24,9 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   vez de gerar um XML que a SEFIN recusaria.
 
 ### Alterado
+- **O `nfse4j-core` passa a depender do Gson** (Apache-2.0), para ler o JSON das APIs do ADN. Deixa
+  de ser zero-dependências: quem consome o core recebe o Gson por transitividade.
+- `EndpointResolver.adn(ambiente)` resolve a base do ADN (`adn.nfse.gov.br` e produção restrita).
 - O workflow de release passa a publicar o `nfse4j-core` e o `nfse4j-danfse` no Maven Central ao
   receber uma tag `v*`, depois de conferir que a tag bate com a versão do `gradle.properties`.
 

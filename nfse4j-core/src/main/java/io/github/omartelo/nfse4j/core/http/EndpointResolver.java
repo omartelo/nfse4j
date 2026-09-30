@@ -11,6 +11,8 @@ public final class EndpointResolver {
         "https://sefin.producaorestrita.nfse.gov.br/SefinNacional"
     );
     private static final URI SEFIN_PRODUCAO = URI.create("https://sefin.nfse.gov.br/SefinNacional");
+    private static final URI ADN_HOMOLOGACAO = URI.create("https://adn.producaorestrita.nfse.gov.br");
+    private static final URI ADN_PRODUCAO = URI.create("https://adn.nfse.gov.br");
 
     private final Map<Ambiente, URI> sefinEndpoints;
 
@@ -38,5 +40,12 @@ public final class EndpointResolver {
             throw new IllegalArgumentException("Ambiente sem endpoint SEFIN configurado: " + ambiente);
         }
         return endpoint;
+    }
+
+    public URI adn(Ambiente ambiente) {
+        return switch (Objects.requireNonNull(ambiente, "ambiente is required")) {
+            case HOMOLOGACAO -> ADN_HOMOLOGACAO;
+            case PRODUCAO -> ADN_PRODUCAO;
+        };
     }
 }

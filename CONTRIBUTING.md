@@ -5,7 +5,7 @@ Contribuições são bem-vindas! Algumas diretrizes:
 ## Desenvolvimento
 
 - Java 21, UTF-8, 4 espaços de indentação. Pacote raiz `io.github.omartelo.nfse4j`.
-- Mantenha o `nfse4j-core` **sem dependências de runtime** (só JDK).
+- Mantenha o `nfse4j-core` com **uma única dependência de runtime**, o Gson. Qualquer outra passa por discussão antes.
 - Rode os testes antes de abrir PR: `./gradlew test`.
 - Testes não devem exigir certificado real — gere material de teste com `TestPkcs12Factory`.
 

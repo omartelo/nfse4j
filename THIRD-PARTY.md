@@ -24,6 +24,7 @@ perdeu as âncoras `^`/`$`, que em regex de XML Schema são literais e faziam to
 | OpenHTMLtoPDF (openhtmltopdf-core / openhtmltopdf-pdfbox) 1.0.10 | LGPL-2.1 | https://github.com/danfickle/openhtmltopdf |
 | Apache PDFBox / FontBox / XmpBox | Apache-2.0 | https://pdfbox.apache.org |
 | de.rototor.pdfbox:graphics2d | Apache-2.0 | https://github.com/rototor/pdfbox-graphics2d |
+| Gson | Apache-2.0 | https://github.com/google/gson |
 | Apache Commons Logging | Apache-2.0 | https://commons.apache.org/logging |
 | ZXing core | Apache-2.0 | https://github.com/zxing/zxing |
 | Liberation Sans (Regular/Bold) | SIL OFL 1.1 | https://github.com/liberationfonts/liberation-fonts |
