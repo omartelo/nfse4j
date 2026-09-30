@@ -35,4 +35,11 @@ class NfseRunnerDistribuicaoDfeTest {
             () -> NfseRunner.consultarDfe(1, CNPJ_OUTRA_RAIZ, Ambiente.HOMOLOGACAO, certificado(dir)));
         assertTrue(ex.getMessage().contains("raiz"));
     }
+
+    @Test
+    void consultarEventosComChaveInvalidaFalhaAntesDaRede(@TempDir Path dir) throws Exception {
+        var ex = assertThrows(IllegalArgumentException.class,
+            () -> NfseRunner.consultarEventosDfe("123", Ambiente.HOMOLOGACAO, certificado(dir)));
+        assertTrue(ex.getMessage().contains("50 digitos"));
+    }
 }

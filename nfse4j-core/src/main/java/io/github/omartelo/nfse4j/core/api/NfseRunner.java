@@ -59,6 +59,9 @@ public final class NfseRunner {
                                         List<DfeResumo> documentos) {
     }
 
+    public record EventosDfeResult(String ambiente, List<DfeResumo> eventos) {
+    }
+
     public record DfeDocumento(long nsu, String tipoDocumento, String chaveAcesso, String tipoEvento,
                                String dataHoraGeracao, String xml) {
     }
@@ -188,6 +191,27 @@ public final class NfseRunner {
                 + lote.statusProcessamento() + "): " + lote.descreverErros()));
         return new DfeDocumento(documento.nsu(), documento.tipoDocumento(), documento.chaveAcesso(),
             documento.tipoEvento(), documento.dataHoraGeracao(), documento.xml());
+    }
+
+    /**
+     * Eventos da distribuicao de DF-e do ADN vinculados a uma chave de acesso de 50 digitos. Devolve so o
+     * resumo; o XML de cada evento sai por {@link #consultarDfe} pelo NSU. Nenhum evento vira lista vazia.
+     *
+     * @throws DistribuicaoDfeException se o ADN rejeitar a consulta ou devolver status desconhecido
+     */
+    public static EventosDfeResult consultarEventosDfe(String chaveAcesso, Ambiente ambiente, CertificadoA1 cert) {
+        LoteDistribuicaoDfe lote = distribuicaoDfe(ambiente, cert).consultarEventos(chaveAcesso);
+        if (lote.statusProcessamento() == LoteDistribuicaoDfe.StatusProcessamento.NENHUM_DOCUMENTO_LOCALIZADO) {
+            return new EventosDfeResult(ambienteLabel(ambiente), List.of());
+        }
+        if (lote.statusProcessamento() != LoteDistribuicaoDfe.StatusProcessamento.DOCUMENTOS_LOCALIZADOS) {
+            throw new DistribuicaoDfeException("Eventos da chave " + chaveAcesso + " retornaram "
+                + lote.statusProcessamento() + ": " + lote.descreverErros());
+        }
+        List<DfeResumo> eventos = lote.loteDfe().stream()
+            .map(d -> new DfeResumo(d.nsu(), d.tipoDocumento(), d.chaveAcesso(), d.tipoEvento(), d.dataHoraGeracao()))
+            .toList();
+        return new EventosDfeResult(ambienteLabel(ambiente), eventos);
     }
 
     public static ParametrosMunicipais.ConvenioResposta consultarConvenio(String codigoMunicipio,

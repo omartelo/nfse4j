@@ -20,8 +20,8 @@ import java.util.Map;
 
 /**
  * CLI de NFS-e Nacional. Subcomandos: cert, emitir, emitir-de-exemplo, consultar, cancelar,
- * solicitar-analise-cancelamento, manifestar, danfse, distribuir-dfe, consultar-dfe e as consultas de
- * parametros municipais do ADN (aliquota, historico-aliquotas, convenio, beneficio, regimes-especiais,
+ * solicitar-analise-cancelamento, manifestar, danfse, distribuir-dfe, consultar-dfe,
+ * consultar-eventos-dfe e as consultas de parametros municipais do ADN (aliquota, historico-aliquotas, convenio, beneficio, regimes-especiais,
  * retencoes).
  * Padrao homologacao; producao exige --confirmar-producao. Use --json para saida estavel.
  */
@@ -54,6 +54,8 @@ public final class Cli {
                 case "danfse" -> danfse(a);
                 case "distribuir-dfe" -> distribuirDfe(a);
                 case "consultar-dfe" -> consultarDfe(a);
+                case "consultar-eventos-dfe" -> emit(a, NfseRunner.consultarEventosDfe(
+                    a.required("chave"), a.ambiente(), certificado(a)));
                 case "aliquota" -> emit(a, NfseRunner.consultarAliquota(
                     a.required("municipio"), a.required("servico"), a.getDate("competencia"), a.ambiente(), certificado(a)));
                 case "historico-aliquotas" -> emit(a, NfseRunner.consultarHistoricoAliquotas(
@@ -250,6 +252,9 @@ public final class Cli {
                                             Se "concluida" vier false, rode de novo com --nsu ultimoNsu.
               consultar-dfe --nsu N [--cnpj-consulta CNPJ]
                                             Mostra o XML de um documento da distribuicao pelo NSU.
+              consultar-eventos-dfe --chave CHAVE
+                                            Lista (resumo) os eventos de uma NFS-e pela chave de acesso.
+                                            O XML de cada evento sai por consultar-dfe --nsu N.
 
             Parametros municipais do ADN (somente leitura; --competencia YYYY-MM-DD, padrao hoje):
               aliquota --municipio IBGE --servico 01.01.01.000 [--competencia D]

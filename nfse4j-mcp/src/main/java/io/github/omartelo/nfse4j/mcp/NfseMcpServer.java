@@ -150,6 +150,19 @@ public final class NfseMcpServer {
                 return ok(NfseRunner.consultarDfe(nsu, textoOu(a, "cnpjConsulta", null), ambiente(a), certificado(a)));
             }));
 
+        tools.add(tool(jsonMapper, "consultar_eventos_dfe",
+            "Lista os eventos (cancelamento, manifestacao...) de uma NFS-e pela chave de acesso, via distribuicao de DF-e do ADN. Devolve so o resumo (nsu, tipo, tipoEvento); o XML de um evento sai por consultar_dfe com o nsu.",
+            """
+            {"type":"object","required":["chaveAcesso"],"properties":{
+              "chaveAcesso":{"type":"string","description":"Chave de acesso da NFS-e (50 digitos)."},
+              "ambiente":{"type":"string","enum":["homologacao","producao"],"default":"homologacao"},
+              "caminhoCertificado":{"type":"string"},"senhaCertificado":{"type":"string"}
+            }}""",
+            (ex, req) -> {
+                Map<String, Object> a = req.arguments();
+                return ok(NfseRunner.consultarEventosDfe(exigirTexto(a, "chaveAcesso"), ambiente(a), certificado(a)));
+            }));
+
         tools.add(tool(jsonMapper, "cancelar_nfse",
             "Cancela uma NFS-e (evento 101101). Producao exige confirmarProducao=true.",
             """
