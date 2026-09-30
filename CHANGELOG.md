@@ -15,6 +15,12 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   ou intermediário (as notas emitidas contra o CNPJ). SDK: `DistribuicaoDfeClient` (lote a partir do
   NSU, NSU único, eventos por chave e `drenar` com trava de lotes). MCP: `distribuir_dfe` (resumo) e
   `consultar_dfe` (XML por NSU). CLI: `distribuir-dfe` e `consultar-dfe`.
+- **Consulta de parâmetros municipais do ADN**: convênio, alíquota, histórico de alíquotas,
+  benefício, regimes especiais e retenções. No SDK via `Nfse.parametrosMunicipais()` e `NfseRunner`
+  (respostas tipadas, alíquotas em `BigDecimal`); no MCP as ferramentas `consultar_aliquota`,
+  `consultar_historico_aliquotas`, `consultar_convenio_municipio`, `consultar_beneficio_municipal`,
+  `consultar_regimes_especiais` e `consultar_retencoes_municipio`; na CLI os comandos `aliquota`,
+  `historico-aliquotas`, `convenio`, `beneficio`, `regimes-especiais` e `retencoes`.
 
 ### Corrigido
 - **Reemissão a partir de nota de exemplo gerava DPS sem `totTrib`.** O leitor descartava

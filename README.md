@@ -95,6 +95,14 @@ Depois, é só conversar com o agente: _"Emita uma NFS-e de R$ 100 para o CPF 11
 | `distribuir_dfe` | Lista as NFS-e e eventos em que o CNPJ do certificado é emitente, tomador ou intermediário (distribuição de DF-e do ADN), a partir de um NSU. Devolve só o resumo. |
 | `consultar_dfe` | Traz o XML de um documento da distribuição pelo NSU. |
 | `gerar_danfse` | **Gera o PDF do DANFSe localmente** a partir do XML da NFS-e. |
+| `consultar_aliquota` | Alíquota de ISS de um serviço no município (ADN). Use antes de emitir. |
+| `consultar_historico_aliquotas` | Todas as alíquotas que o serviço já teve no município, com vigências. |
+| `consultar_convenio_municipio` | Adesão do município ao ambiente e ao emissor nacional. |
+| `consultar_beneficio_municipal` | Benefício fiscal municipal pelo número. |
+| `consultar_regimes_especiais` | Regimes especiais de tributação aceitos para o serviço. |
+| `consultar_retencoes_municipio` | Regras de retenção de ISS do município. |
+
+As consultas de parâmetros municipais recebem o código IBGE do município (7 dígitos), o código de tributação nacional com 6 ou 9 dígitos (`010101` ou `01.01.01.000`) e `competencia` opcional (`YYYY-MM-DD`, padrão hoje). Quando o município não parametrizou o dado, a resposta volta com os campos nulos e a `mensagem` do ADN.
 
 Todas aceitam `ambiente` (`homologacao` por padrão) e, nas operações de escrita, `confirmarProducao` (obrigatório `true` para produção). O certificado vem das envs `NFSE_CERT_PATH`/`NFSE_CERT_PASSWORD` ou dos parâmetros da ferramenta.
 
@@ -112,6 +120,7 @@ java -jar $JAR consultar --chave CHAVE_DA_NFSE --json
 java -jar $JAR danfse --xml nota.xml --saida danfse.pdf
 java -jar $JAR distribuir-dfe --nsu 0 --json      # notas emitidas contra o CNPJ (resumo)
 java -jar $JAR consultar-dfe --nsu 42 --json      # XML de um documento da distribuição
+java -jar $JAR aliquota --municipio 3550308 --servico 01.01.01.000 --json
 # Producao (documento fiscal REAL) exige a flag:
 java -jar $JAR emitir --arquivo nota.json --ambiente producao --confirmar-producao
 ```
@@ -136,7 +145,13 @@ var resultado = NfseRunner.emitir(
     cert,
     false);                  // confirmarProducao
 System.out.println(resultado.chaveAcesso());
+
+// Alíquota de ISS vigente hoje (competência null) para o serviço 01.01.01.000 em São Paulo
+var aliquotas = NfseRunner.consultarAliquota("3550308", "010101", null, Ambiente.HOMOLOGACAO, cert);
+aliquotas.aliquotas().get("01.01.01.000").forEach(a -> System.out.println(a.aliquota()));
 ```
+
+Os parâmetros municipais também estão em `new Nfse(context).parametrosMunicipais()` (convênio, alíquota, histórico, benefício, regimes especiais e retenções), com respostas tipadas em `ParametrosMunicipais`. Status 404 do ADN volta como resposta com a `mensagem`; outros erros lançam `ParametrosMunicipaisException` com o status HTTP.
 
 O `nfse4j-core` tem uma única dependência de runtime, o **Gson** (JSON das APIs do ADN). O resto vem do JDK (HTTP via `java.net.http`, assinatura via `javax.xml.crypto.dsig`, mTLS via `SSLContext` do A1).
 
