@@ -247,10 +247,9 @@ class ContribuinteServiceTest {
     }
 
     private CertificadoA1 certificado() throws Exception {
-        char[] password = "senha-teste".toCharArray();
         Path certificatePath = tempDir.resolve("certificado-teste.p12");
-        TestPkcs12Factory.create(certificatePath, password, "nfse-test", "12345678000195");
-        return CertificadoA1.fromFile(certificatePath, password);
+        TestPkcs12Factory.create(certificatePath, TestPkcs12Factory.SENHA, "nfse-test", "12345678000195");
+        return CertificadoA1.fromFile(certificatePath, TestPkcs12Factory.SENHA);
     }
 
     private NfseContext context(CertificadoA1 certificado) {

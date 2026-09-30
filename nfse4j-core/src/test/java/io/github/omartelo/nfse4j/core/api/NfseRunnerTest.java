@@ -19,7 +19,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 class NfseRunnerTest {
 
-    private static final char[] SENHA = "test-pass".toCharArray();
     private static final String CNPJ = "12345678000199";
     private static final String CHAVE_ACESSO = "31298062112223330001810000000000000012345678901234";
 
@@ -34,8 +33,8 @@ class NfseRunnerTest {
 
     private static CertificadoA1 certValido(Path dir) throws Exception {
         Path p = dir.resolve("valido.p12");
-        TestPkcs12Factory.create(p, SENHA, "1", CNPJ);
-        return CertificadoA1.fromFile(p, SENHA);
+        TestPkcs12Factory.create(p, TestPkcs12Factory.SENHA, "1", CNPJ);
+        return CertificadoA1.fromFile(p, TestPkcs12Factory.SENHA);
     }
 
     @Test
@@ -108,8 +107,8 @@ class NfseRunnerTest {
     @Test
     void manifestarComCertificadoExpiradoFalha(@TempDir Path dir) throws Exception {
         Path p = dir.resolve("expirado.p12");
-        TestPkcs12Factory.createExpired(p, SENHA, "1", CNPJ);
-        CertificadoA1 expirado = CertificadoA1.fromFile(p, SENHA);
+        TestPkcs12Factory.createExpired(p, TestPkcs12Factory.SENHA, "1", CNPJ);
+        CertificadoA1 expirado = CertificadoA1.fromFile(p, TestPkcs12Factory.SENHA);
 
         var ex = assertThrows(IllegalStateException.class,
             () -> NfseRunner.manifestar(CHAVE_ACESSO, null, TipoManifestacao.CONFIRMACAO_TOMADOR, null, null,
@@ -120,8 +119,8 @@ class NfseRunnerTest {
     @Test
     void emitirComCertificadoExpiradoFalha(@TempDir Path dir) throws Exception {
         Path p = dir.resolve("expirado.p12");
-        TestPkcs12Factory.createExpired(p, SENHA, "1", CNPJ);
-        CertificadoA1 expirado = CertificadoA1.fromFile(p, SENHA);
+        TestPkcs12Factory.createExpired(p, TestPkcs12Factory.SENHA, "1", CNPJ);
+        CertificadoA1 expirado = CertificadoA1.fromFile(p, TestPkcs12Factory.SENHA);
 
         var ex = assertThrows(IllegalStateException.class,
             () -> NfseRunner.emitir(request(), Ambiente.HOMOLOGACAO, expirado, false));

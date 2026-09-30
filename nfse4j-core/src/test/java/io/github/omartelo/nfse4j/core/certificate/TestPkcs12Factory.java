@@ -24,6 +24,8 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 public final class TestPkcs12Factory {
 
+    public static final char[] SENHA = "test-pass".toCharArray();
+
     private TestPkcs12Factory() {
     }
 
