@@ -85,10 +85,25 @@ public final class Cli {
     }
 
     private static void emitir(Args a) throws Exception {
-        EmitirNfseRequest request = JSON.readValue(
-            Files.readString(Path.of(a.required("arquivo"))), EmitirNfseRequest.class);
+        EmitirNfseRequest request = substituicao(a, JSON.readValue(
+            Files.readString(Path.of(a.required("arquivo"))), EmitirNfseRequest.class));
         var result = NfseRunner.emitir(request, a.ambiente(), certificado(a), a.flag("confirmar-producao"));
         emit(a, result);
+    }
+
+    private static EmitirNfseRequest substituicao(Args a, EmitirNfseRequest request) {
+        String chaveSubstituida = a.get("substituir-chave");
+        String codigoMotivo = a.get("substituicao-motivo-codigo");
+        String descricaoMotivo = a.get("substituicao-motivo-descricao");
+        if (chaveSubstituida == null && codigoMotivo == null && descricaoMotivo == null) {
+            return request;
+        }
+        if (request.substituicao() != null) {
+            throw new IllegalArgumentException(
+                "Substituicao informada no payload e nas opcoes --substituir-chave/--substituicao-motivo-*; use so um.");
+        }
+        return request.withSubstituicao(
+            new EmitirNfseRequest.SubstituicaoRequest(chaveSubstituida, codigoMotivo, descricaoMotivo));
     }
 
     private static void emitirDeExemplo(Args a) throws Exception {
@@ -230,6 +245,10 @@ public final class Cli {
             Comandos:
               cert                          Valida o certificado A1 e mostra dados (CNPJ/CPF, validade).
               emitir --arquivo nota.json    Emite uma DPS a partir de um payload JSON.
+                [--substituir-chave CHAVE --substituicao-motivo-codigo 01|02|03|04|05|99
+                 --substituicao-motivo-descricao D]
+                                            Emite uma NFS-e SUBSTITUTA da nota CHAVE ja emitida: a SEFIN
+                                            cancela a original (evento 105102). Em producao, cancela nota REAL.
               emitir-de-exemplo --exemplo nota.xml [--numero N] [--descricao D] [--valor V]
                                             [--tomador-cpf X --tomador-nome Y] [--tomador-cnpj X]
                                             Reaproveita uma nota existente trocando so o que mudar.

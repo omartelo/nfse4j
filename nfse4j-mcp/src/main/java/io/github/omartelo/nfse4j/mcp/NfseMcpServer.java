@@ -64,10 +64,16 @@ public final class NfseMcpServer {
             (ex, req) -> ok(NfseRunner.cert(certificado(req.arguments())))));
 
         tools.add(tool(jsonMapper, "emitir_nfse",
-            "Emite uma NFS-e a partir dos dados informados. Padrao homologacao; producao exige confirmarProducao=true (documento fiscal REAL).",
+            "Emite uma NFS-e a partir dos dados informados. Padrao homologacao; producao exige confirmarProducao=true (documento fiscal REAL). Com dados.substituicao, emite uma NFS-e SUBSTITUTA de uma nota ja emitida: a SEFIN cancela a nota original (evento 105102); em producao isso cancela uma nota REAL.",
             """
             {"type":"object","required":["dados"],"properties":{
-              "dados":{"type":"object","description":"Payload da nota: codigoMunicipio, numero, valorServico, prestador{cnpj/cpf,opcaoSimplesNacional,regimeApuracaoSimplesNacional,regimeEspecialTributacao,inscricaoMunicipal}, tomador{cnpj/cpf,nome, e opcionalmente codigoMunicipio,cep,logradouro,numero,bairro}, servico{codigoTributacaoNacional,descricao,codigoLocalPrestacao,codigoTributacaoMunicipal,codigoNbs}, tributacao{tributacaoIssqn,tipoRetencaoIssqn, e indicadorTotalTributos OU percentualTotalTributosSimplesNacional}."},
+              "dados":{"type":"object","description":"Payload da nota: codigoMunicipio, numero, valorServico, prestador{cnpj/cpf,opcaoSimplesNacional,regimeApuracaoSimplesNacional,regimeEspecialTributacao,inscricaoMunicipal}, tomador{cnpj/cpf,nome, e opcionalmente codigoMunicipio,cep,logradouro,numero,bairro}, servico{codigoTributacaoNacional,descricao,codigoLocalPrestacao,codigoTributacaoMunicipal,codigoNbs}, tributacao{tributacaoIssqn,tipoRetencaoIssqn, e indicadorTotalTributos OU percentualTotalTributosSimplesNacional}, substituicao (opcional).","properties":{
+                "substituicao":{"type":"object","required":["chaveSubstituida","codigoMotivo"],"description":"So para SUBSTITUIR uma NFS-e JA EMITIDA (corrigir dados de uma nota autorizada). A nova nota leva a chave da original e a SEFIN CANCELA a original automaticamente (evento 105102); nao chame cancelar_nfse nela. Em producao isso cancela uma nota REAL. Omita para uma emissao normal.","properties":{
+                  "chaveSubstituida":{"type":"string","description":"Chave de acesso (50 digitos) da NFS-e ja emitida que sera substituida e cancelada."},
+                  "codigoMotivo":{"type":"string","enum":["01","02","03","04","05","99"],"description":"01 desenquadramento do Simples Nacional; 02 enquadramento no Simples Nacional; 03 inclusao retroativa de imunidade/isencao; 04 exclusao retroativa de imunidade/isencao; 05 rejeicao da NFS-e pelo tomador ou intermediario responsavel pelo recolhimento; 99 outros."},
+                  "descricaoMotivo":{"type":"string","minLength":15,"maxLength":255,"description":"Descricao do motivo da substituicao (opcional; 15 a 255 caracteres)."}
+                }}
+              }},
               "ambiente":{"type":"string","enum":["homologacao","producao"],"default":"homologacao"},
               "confirmarProducao":{"type":"boolean","default":false,"description":"Obrigatorio true para emitir em producao."},
               "caminhoCertificado":{"type":"string"},"senhaCertificado":{"type":"string"}
