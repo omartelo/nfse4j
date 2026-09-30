@@ -3,11 +3,15 @@ package io.github.omartelo.nfse4j.core.service;
 import io.github.omartelo.nfse4j.core.NfseContext;
 import io.github.omartelo.nfse4j.core.http.NfseHttpResponse;
 import io.github.omartelo.nfse4j.core.http.SefinClient;
+import io.github.omartelo.nfse4j.core.xml.XmlSchemaValidationException;
+import io.github.omartelo.nfse4j.core.xml.XmlSchemaValidator;
+import io.github.omartelo.nfse4j.core.xml.XmlSchemaViolation;
 import io.github.omartelo.nfse4j.core.xml.XmlSigner;
 import io.github.omartelo.nfse4j.core.xml.dps.Dps;
 import io.github.omartelo.nfse4j.core.xml.dps.DpsXmlBuilder;
 import io.github.omartelo.nfse4j.core.xml.evento.CancelamentoNfse;
 import io.github.omartelo.nfse4j.core.xml.evento.PedidoRegistroEventoXmlBuilder;
+import java.util.List;
 
 public final class ContribuinteService {
     private final NfseContext context;
@@ -38,6 +42,7 @@ public final class ContribuinteService {
             context.certificado()
                 .orElseThrow(() -> new ContribuinteServiceException("Certificado A1 e obrigatorio para emitir DPS."))
         );
+        exigirConformeXsd("DPS", XmlSchemaValidator.validarDps(signedXml));
         NfseHttpResponse response = sefinClient.emitirNfseXml(signedXml);
         return new EmissaoNfseResult(response, xml, signedXml);
     }
@@ -53,6 +58,7 @@ public final class ContribuinteService {
     }
 
     public NfseHttpResponse emitirXml(String dpsXml) {
+        exigirConformeXsd("DPS", XmlSchemaValidator.validarDps(dpsXml));
         return sefinClient.emitirNfseXml(dpsXml);
     }
 
@@ -81,5 +87,13 @@ public final class ContribuinteService {
 
     public NfseHttpResponse registrarEventoXml(String chaveAcesso, String eventoXml) {
         return sefinClient.registrarEventoXml(chaveAcesso, eventoXml);
+    }
+
+    // Valida o XML ja assinado, que e exatamente o que vai para a SEFIN: a ds:Signature e opcional
+    // no XSD, mas quando presente tambem e conferida contra o xmldsig-core-schema.
+    private static void exigirConformeXsd(String documento, List<XmlSchemaViolation> violacoes) {
+        if (!violacoes.isEmpty()) {
+            throw new XmlSchemaValidationException(documento, violacoes);
+        }
     }
 }

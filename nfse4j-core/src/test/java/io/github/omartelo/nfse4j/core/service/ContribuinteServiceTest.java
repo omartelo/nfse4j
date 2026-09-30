@@ -7,8 +7,11 @@ import io.github.omartelo.nfse4j.core.certificate.TestPkcs12Factory;
 import io.github.omartelo.nfse4j.core.http.EndpointResolver;
 import io.github.omartelo.nfse4j.core.http.NfseHttpResponse;
 import io.github.omartelo.nfse4j.core.xml.XmlPayloadCodec;
+import io.github.omartelo.nfse4j.core.xml.XmlSchemaValidationException;
 import io.github.omartelo.nfse4j.core.xml.dps.Dps;
 import io.github.omartelo.nfse4j.core.xml.dps.DpsIdGenerator;
+import io.github.omartelo.nfse4j.core.xml.dps.DpsXmlBuilder;
+import io.github.omartelo.nfse4j.core.xml.dps.DpsXmlReader;
 import io.github.omartelo.nfse4j.core.xml.evento.CancelamentoNfse;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -22,6 +25,7 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.crypto.dsig.XMLSignatureFactory;
 import javax.xml.crypto.dsig.dom.DOMValidateContext;
@@ -34,6 +38,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -131,6 +136,42 @@ class ContribuinteServiceTest {
         );
 
         assertEquals("Certificado A1 e obrigatorio para cancelar NFS-e.", exception.getMessage());
+    }
+
+    @Test
+    void naoEnviaDpsQueFalhaNoXsd() throws Exception {
+        AtomicBoolean enviou = new AtomicBoolean();
+        startServer(exchange -> {
+            enviou.set(true);
+            respond(exchange, 201, "{}");
+        });
+        String xmlInvalido = new DpsXmlBuilder().build(minimalDps())
+            .replace("<cTribNac>141001</cTribNac>", "<cTribNac>14</cTribNac>");
+        ContribuinteService service = new ContribuinteService(context(certificado()));
+
+        XmlSchemaValidationException exception = assertThrows(
+            XmlSchemaValidationException.class,
+            () -> service.emitir(DpsXmlReader.read(xmlInvalido))
+        );
+
+        assertEquals("cTribNac", exception.violacoes().get(0).elemento());
+        assertTrue(exception.getMessage().contains("cTribNac"), exception.getMessage());
+        assertFalse(enviou.get());
+    }
+
+    @Test
+    void naoEnviaXmlDeDpsQueFalhaNoXsd() throws Exception {
+        AtomicBoolean enviou = new AtomicBoolean();
+        startServer(exchange -> {
+            enviou.set(true);
+            respond(exchange, 201, "{}");
+        });
+        String xmlInvalido = new DpsXmlBuilder().build(minimalDps())
+            .replace("<cTribNac>141001</cTribNac>", "<cTribNac>14</cTribNac>");
+        ContribuinteService service = new ContribuinteService(context(certificado()));
+
+        assertThrows(XmlSchemaValidationException.class, () -> service.emitirXml(xmlInvalido));
+        assertFalse(enviou.get());
     }
 
     private CertificadoA1 certificado() throws Exception {
