@@ -7,10 +7,10 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Adicionado
 - **Validação contra o XSD oficial antes do envio.** A DPS (em `emitir`, `emitirDetalhado` e
-  `emitirXml`) e o pedido de cancelamento são validados contra os XSDs da NFS-e Nacional v1.01, já
-  assinados, antes de ir para a SEFIN. Violação lança `XmlSchemaValidationException`, com linha,
-  coluna, elemento e mensagem do schema; nada é enviado. `XmlSchemaValidator` é público para validar
-  DPS e pedido de registro de evento avulsos.
+  `emitirXml`) e os pedidos de registro de evento (cancelamento, análise fiscal e manifestação) são
+  validados contra os XSDs da NFS-e Nacional v1.01, já assinados, antes de ir para a SEFIN. Violação
+  lança `XmlSchemaValidationException`, com linha, coluna, elemento e mensagem do schema; nada é
+  enviado. `XmlSchemaValidator` é público para validar DPS e pedido de registro de evento avulsos.
 - **Distribuição de DF-e do ADN**: descobre as NFS-e em que o CNPJ do certificado é emitente, tomador
   ou intermediário (as notas emitidas contra o CNPJ). SDK: `DistribuicaoDfeClient` (lote a partir do
   NSU, NSU único, eventos por chave e `drenar` com trava de lotes). MCP: `distribuir_dfe` (resumo) e
