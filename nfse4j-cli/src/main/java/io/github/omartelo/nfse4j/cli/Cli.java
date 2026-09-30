@@ -6,6 +6,7 @@ import io.github.omartelo.nfse4j.core.api.NfseRunner;
 import io.github.omartelo.nfse4j.core.certificate.CertificadoA1;
 import io.github.omartelo.nfse4j.core.xml.dps.Dps;
 import io.github.omartelo.nfse4j.core.xml.dps.DpsReemissao;
+import io.github.omartelo.nfse4j.core.xml.evento.TipoManifestacao;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -15,12 +16,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
- * CLI de NFS-e Nacional. Subcomandos: cert, emitir, emitir-de-exemplo, consultar, cancelar, danfse,
- * distribuir-dfe, consultar-dfe e as consultas de parametros municipais do ADN (aliquota,
- * historico-aliquotas, convenio, beneficio, regimes-especiais, retencoes).
+ * CLI de NFS-e Nacional. Subcomandos: cert, emitir, emitir-de-exemplo, consultar, cancelar,
+ * solicitar-analise-cancelamento, manifestar, danfse, distribuir-dfe, consultar-dfe e as consultas de
+ * parametros municipais do ADN (aliquota, historico-aliquotas, convenio, beneficio, regimes-especiais,
+ * retencoes).
  * Padrao homologacao; producao exige --confirmar-producao. Use --json para saida estavel.
  */
 public final class Cli {
@@ -47,6 +50,8 @@ public final class Cli {
                 case "emitir-de-exemplo" -> emitirDeExemplo(a);
                 case "consultar" -> consultar(a);
                 case "cancelar" -> cancelar(a);
+                case "solicitar-analise-cancelamento" -> solicitarAnaliseCancelamento(a);
+                case "manifestar" -> manifestar(a);
                 case "danfse" -> danfse(a);
                 case "distribuir-dfe" -> distribuirDfe(a);
                 case "consultar-dfe" -> consultarDfe(a);
@@ -124,6 +129,31 @@ public final class Cli {
 
     private static void consultarDfe(Args a) {
         emit(a, NfseRunner.consultarDfe(Long.parseLong(a.required("nsu")), a.get("cnpj-consulta"), a.ambiente(), certificado(a)));
+    }
+
+    private static void solicitarAnaliseCancelamento(Args a) {
+        var result = NfseRunner.solicitarAnaliseFiscalCancelamento(
+            a.required("chave"),
+            a.get("autor"),
+            a.required("motivo-codigo"),
+            a.required("motivo-descricao"),
+            a.ambiente(),
+            certificado(a),
+            a.flag("confirmar-producao"));
+        emit(a, result);
+    }
+
+    private static void manifestar(Args a) {
+        var result = NfseRunner.manifestar(
+            a.required("chave"),
+            a.get("autor"),
+            TipoManifestacao.valueOf(a.required("tipo").toUpperCase(Locale.ROOT).replace('-', '_')),
+            a.get("motivo-codigo"),
+            a.get("motivo-descricao"),
+            a.ambiente(),
+            certificado(a),
+            a.flag("confirmar-producao"));
+        emit(a, result);
     }
 
     private static void danfse(Args a) throws Exception {
@@ -205,6 +235,13 @@ public final class Cli {
               consultar --chave CHAVE       Consulta uma NFS-e pela chave de acesso.
               cancelar --chave CHAVE --motivo-codigo C --motivo-descricao D
                                             Cancela uma NFS-e (evento 101101).
+              solicitar-analise-cancelamento --chave CHAVE --motivo-codigo 1|2|9 --motivo-descricao D
+                                            Pede analise fiscal para cancelar (evento 101103).
+              manifestar --chave CHAVE --tipo TIPO [--motivo-codigo C] [--motivo-descricao D]
+                                            Confirma ou rejeita uma NFS-e. TIPO: confirmacao-prestador,
+                                            confirmacao-tomador, confirmacao-intermediario,
+                                            rejeicao-prestador, rejeicao-tomador, rejeicao-intermediario.
+                                            Rejeicao exige --motivo-codigo (1,2,3,4,5,9).
               danfse --xml nota.xml [--saida arq.pdf] [--logo-emitente logo.png]
                                             Gera o DANFSe/PDF localmente a partir do XML da NFS-e.
                                             --logo-emitente: logo do prestador no cabecalho (~300x120 px).
@@ -230,7 +267,7 @@ public final class Cli {
 
             Opcoes comuns:
               --ambiente homologacao|producao   Padrao: homologacao.
-              --confirmar-producao              Obrigatorio para emitir/cancelar em PRODUCAO (doc fiscal REAL).
+              --confirmar-producao              Obrigatorio para emitir/registrar evento em PRODUCAO (doc fiscal REAL).
               --cert CAMINHO --senha SENHA      Ou via env NFSE_CERT_PATH / NFSE_CERT_PASSWORD.
               --json                            Saida JSON estavel (para agentes).
             """);
