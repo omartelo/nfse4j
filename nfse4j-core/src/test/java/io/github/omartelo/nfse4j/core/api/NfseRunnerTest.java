@@ -76,4 +76,11 @@ class NfseRunnerTest {
             () -> NfseRunner.emitir(request(), Ambiente.HOMOLOGACAO, expirado, false));
         assertTrue(ex.getMessage().contains("validade"));
     }
+
+    @Test
+    void consultarAliquotaComMunicipioInvalidoFalhaAntesDaRede(@TempDir Path dir) throws Exception {
+        var ex = assertThrows(IllegalArgumentException.class,
+            () -> NfseRunner.consultarAliquota("123", "010101", null, Ambiente.HOMOLOGACAO, certValido(dir)));
+        assertTrue(ex.getMessage().contains("municipio"));
+    }
 }
