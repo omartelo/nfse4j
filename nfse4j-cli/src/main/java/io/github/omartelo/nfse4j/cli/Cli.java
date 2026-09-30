@@ -18,7 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * CLI de NFS-e Nacional. Subcomandos: cert, emitir, emitir-de-exemplo, consultar, cancelar, pdf.
+ * CLI de NFS-e Nacional. Subcomandos: cert, emitir, emitir-de-exemplo, consultar, cancelar, danfse,
+ * distribuir-dfe, consultar-dfe.
  * Padrao homologacao; producao exige --confirmar-producao. Use --json para saida estavel.
  */
 public final class Cli {
@@ -46,6 +47,8 @@ public final class Cli {
                 case "consultar" -> consultar(a);
                 case "cancelar" -> cancelar(a);
                 case "danfse" -> danfse(a);
+                case "distribuir-dfe" -> distribuirDfe(a);
+                case "consultar-dfe" -> consultarDfe(a);
                 case "help", "-h", "--help" -> usage();
                 default -> {
                     System.err.println("Comando desconhecido: " + command);
@@ -100,6 +103,15 @@ public final class Cli {
             certificado(a),
             a.flag("confirmar-producao"));
         emit(a, result);
+    }
+
+    private static void distribuirDfe(Args a) {
+        Long nsu = a.getLong("nsu");
+        emit(a, NfseRunner.distribuirDfe(nsu == null ? 0 : nsu, a.get("cnpj-consulta"), a.ambiente(), certificado(a)));
+    }
+
+    private static void consultarDfe(Args a) {
+        emit(a, NfseRunner.consultarDfe(Long.parseLong(a.required("nsu")), a.get("cnpj-consulta"), a.ambiente(), certificado(a)));
     }
 
     private static void danfse(Args a) throws Exception {
@@ -184,6 +196,12 @@ public final class Cli {
               danfse --xml nota.xml [--saida arq.pdf] [--logo-emitente logo.png]
                                             Gera o DANFSe/PDF localmente a partir do XML da NFS-e.
                                             --logo-emitente: logo do prestador no cabecalho (~300x120 px).
+              distribuir-dfe [--nsu N] [--cnpj-consulta CNPJ]
+                                            Lista (resumo) as NFS-e e eventos em que o CNPJ e emitente,
+                                            tomador ou intermediario, a partir do ultimo NSU processado.
+                                            Se "concluida" vier false, rode de novo com --nsu ultimoNsu.
+              consultar-dfe --nsu N [--cnpj-consulta CNPJ]
+                                            Mostra o XML de um documento da distribuicao pelo NSU.
 
             Opcoes comuns:
               --ambiente homologacao|producao   Padrao: homologacao.
