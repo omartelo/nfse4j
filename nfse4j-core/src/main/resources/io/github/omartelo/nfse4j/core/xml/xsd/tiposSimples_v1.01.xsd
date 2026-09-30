@@ -158,7 +158,8 @@
   <xs:simpleType name="TSSerieDPS">
     <xs:restriction base="xs:string">
       <xs:maxLength value="5"/>
-      <xs:pattern value="^0{0,4}\d{1,5}$"/>
+      <!-- nfse4j: o oficial traz "^0{0,4}\d{1,5}$". Em regex XSD "^" e "$" sao literais (o pattern ja e ancorado), entao nenhuma serie real passava. Removidas so as ancoras. -->
+      <xs:pattern value="0{0,4}\d{1,5}"/>
       <xs:whiteSpace value="preserve"/>
     </xs:restriction>
   </xs:simpleType>
