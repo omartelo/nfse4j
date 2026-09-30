@@ -6,14 +6,14 @@ Contribuições são bem-vindas! Algumas diretrizes:
 
 - Java 21, UTF-8, 4 espaços de indentação. Pacote raiz `io.github.omartelo.nfse4j`.
 - Mantenha o `nfse4j-core` **sem dependências de runtime** (só JDK).
-- Rode os testes antes de abrir PR: `mvn test`.
+- Rode os testes antes de abrir PR: `./gradlew test`.
 - Testes não devem exigir certificado real — gere material de teste com `TestPkcs12Factory`.
 
 ## Build e teste
 
 ```bash
-mvn clean install          # build + testes dos 3 modulos
-mvn -pl nfse4j-core test      # so o SDK
+./gradlew build                # build + testes de todos os modulos
+./gradlew :nfse4j-core:test    # so o SDK
 ```
 
 ## Segurança — leia antes de commitar

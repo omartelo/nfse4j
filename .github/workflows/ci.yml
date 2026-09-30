@@ -15,6 +15,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-          cache: maven
+          cache: gradle
       - name: Build e testes
-        run: mvn -B clean verify
+        run: ./gradlew build

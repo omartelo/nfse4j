@@ -1,7 +1,8 @@
 # Build
-target/
+build/
+.gradle/
+.kotlin/
 *.class
-dependency-reduced-pom.xml
 
 # Segredos e certificados — NUNCA commitar
 .env

@@ -46,7 +46,6 @@ O `nfse4j-core` é o motor. O `nfse4j-mcp` e o `nfse4j-cli` são camadas finas p
 ## Requisitos
 
 - Java 21+
-- Maven 3.9+ (só para buildar a partir do código)
 - Certificado digital **A1** (`.pfx`/`.p12`) do prestador
 
 ## Instalação
@@ -56,12 +55,12 @@ A forma mais rápida: baixe os jars prontos da [última release](https://github.
 Ou compile do código:
 
 ```bash
-mvn clean package
+./gradlew build
 ```
 
 Gera os jars executáveis:
-- `nfse4j-mcp/target/nfse4j-mcp.jar` — servidor MCP
-- `nfse4j-cli/target/nfse4j-cli.jar` — CLI
+- `nfse4j-mcp/build/libs/nfse4j-mcp.jar` — servidor MCP
+- `nfse4j-cli/build/libs/nfse4j-cli.jar` — CLI
 
 ## Uso via MCP (destaque)
 
@@ -101,7 +100,7 @@ Todas aceitam `ambiente` (`homologacao` por padrão) e, nas operações de escri
 ## Uso via CLI
 
 ```bash
-JAR=nfse4j-cli/target/nfse4j-cli.jar
+JAR=nfse4j-cli/build/libs/nfse4j-cli.jar
 export NFSE_CERT_PATH=/caminho/cert.pfx NFSE_CERT_PASSWORD=senha
 
 java -jar $JAR cert --json

@@ -14,6 +14,9 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   - Pacotes: `br.com.nfse.sdk` → `io.github.omartelo.nfse4j.core`; `br.com.nfse.{danfse,cli,mcp}` →
     `io.github.omartelo.nfse4j.{danfse,cli,mcp}`.
   - `verAplic` enviado na DPS/eventos e `serverInfo` do MCP passam a ser `nfse4j`.
+- **Build migrado de Maven para Gradle** (Kotlin DSL, wrapper 9.7.1, version catalog em
+  `gradle/libs.versions.toml`). Fat jars em `nfse4j-{cli,mcp}/build/libs/`; publicação no Central via
+  `./gradlew publishToMavenCentral`.
 
 ## [0.4.5] - 2026-06-25
 

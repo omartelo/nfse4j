@@ -18,14 +18,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-          cache: maven
+          cache: gradle
       - name: Build e testes
-        run: mvn -B clean verify
+        run: ./gradlew build
       - name: Renomear jars com a versao da tag
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          cp nfse4j-mcp/target/nfse4j-mcp.jar "nfse4j-mcp-${VERSION}.jar"
-          cp nfse4j-cli/target/nfse4j-cli.jar "nfse4j-cli-${VERSION}.jar"
+          cp nfse4j-mcp/build/libs/nfse4j-mcp.jar "nfse4j-mcp-${VERSION}.jar"
+          cp nfse4j-cli/build/libs/nfse4j-cli.jar "nfse4j-cli-${VERSION}.jar"
       - name: Criar GitHub Release com os jars
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

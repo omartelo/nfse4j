@@ -1,0 +1,27 @@
+[versions]
+junit = "5.12.2"
+jackson = "2.18.2"
+mcp = "1.0.2"
+bouncycastle = "1.78.1"
+openhtmltopdf = "1.0.10"
+zxing = "3.5.4"
+shadow = "9.6.1"
+maven-publish = "0.37.0"
+
+[libraries]
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+mcp = { module = "io.modelcontextprotocol.sdk:mcp", version.ref = "mcp" }
+bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+bouncycastle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
+# HTML/CSS -> PDF (LGPL 2.1, dependencia de runtime). PDFBox e Apache-2.0.
+openhtmltopdf-pdfbox = { module = "com.openhtmltopdf:openhtmltopdf-pdfbox", version.ref = "openhtmltopdf" }
+# QR Code (Apache-2.0).
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
+
+[plugins]
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
