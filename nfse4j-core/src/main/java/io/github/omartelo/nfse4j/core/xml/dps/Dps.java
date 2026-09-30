@@ -3,6 +3,7 @@ package io.github.omartelo.nfse4j.core.xml.dps;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Objects;
 
 public record Dps(String versao, InfDps infDps) {
@@ -95,6 +96,26 @@ public record Dps(String versao, InfDps infDps) {
         TotalTributos valorTotalTributos,
         TotalTributos percentualTotalTributos
     ) {
+        public Tributacao {
+            var informados = new ArrayList<String>();
+            if (valorTotalTributos != null) {
+                informados.add("valorTotalTributos");
+            }
+            if (percentualTotalTributos != null) {
+                informados.add("percentualTotalTributos");
+            }
+            if (indicadorTotalTributos != null) {
+                informados.add("indicadorTotalTributos");
+            }
+            if (percentualTotalTributosSimplesNacional != null) {
+                informados.add("percentualTotalTributosSimplesNacional");
+            }
+            if (informados.size() > 1) {
+                throw new IllegalArgumentException(
+                    "totTrib aceita um so grupo (choice do XSD da DPS); vieram juntos: " + String.join(", ", informados));
+            }
+        }
+
         public Tributacao(Integer tributacaoIssqn, Integer tipoRetencaoIssqn, Integer indicadorTotalTributos) {
             this(tributacaoIssqn, tipoRetencaoIssqn, indicadorTotalTributos, null);
         }
