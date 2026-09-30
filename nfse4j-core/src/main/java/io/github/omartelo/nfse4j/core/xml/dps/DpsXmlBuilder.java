@@ -117,13 +117,64 @@ public final class DpsXmlBuilder {
     private void buildValores(Element parent, Dps.Valores data) {
         Element valores = element(parent, "valores");
         Element servicoPrestado = element(valores, "vServPrest");
+        append(servicoPrestado, "vReceb", money(data.valorRecebido()));
         append(servicoPrestado, "vServ", money(data.valorServico()));
+        if (data.descontos() != null) {
+            Element descontos = element(valores, "vDescCondIncond");
+            append(descontos, "vDescIncond", money(data.descontos().incondicionado()));
+            append(descontos, "vDescCond", money(data.descontos().condicionado()));
+        }
+        if (data.deducaoReducao() != null) {
+            Element deducaoReducao = element(valores, "vDedRed");
+            append(deducaoReducao, "pDR", percentage(data.deducaoReducao().percentual()));
+            append(deducaoReducao, "vDR", money(data.deducaoReducao().valor()));
+        }
 
         Element trib = element(valores, "trib");
-        Element tribMun = element(trib, "tribMun");
-        append(tribMun, "tribISSQN", data.tributacao().tributacaoIssqn());
-        append(tribMun, "tpRetISSQN", data.tributacao().tipoRetencaoIssqn());
+        buildTributacaoMunicipal(trib, data.tributacao());
+        buildTributacaoFederal(trib, data.tributacao().tributacaoFederal());
         buildTotalTributos(trib, data.tributacao());
+    }
+
+    private void buildTributacaoMunicipal(Element trib, Dps.Tributacao data) {
+        Element tribMun = element(trib, "tribMun");
+        append(tribMun, "tribISSQN", data.tributacaoIssqn());
+        append(tribMun, "cPaisResult", data.codigoPaisResultado());
+        append(tribMun, "tpImunidade", data.tipoImunidade());
+        if (data.exigibilidadeSuspensa() != null) {
+            Element exigSusp = element(tribMun, "exigSusp");
+            append(exigSusp, "tpSusp", data.exigibilidadeSuspensa().tipo());
+            append(exigSusp, "nProcesso", data.exigibilidadeSuspensa().numeroProcesso());
+        }
+        if (data.beneficioMunicipal() != null) {
+            Element bm = element(tribMun, "BM");
+            append(bm, "nBM", data.beneficioMunicipal().numero());
+            append(bm, "vRedBCBM", money(data.beneficioMunicipal().valorReducaoBaseCalculo()));
+            append(bm, "pRedBCBM", percentage(data.beneficioMunicipal().percentualReducaoBaseCalculo()));
+        }
+        append(tribMun, "tpRetISSQN", data.tipoRetencaoIssqn());
+        append(tribMun, "pAliq", percentage(data.aliquotaIssqn()));
+    }
+
+    private void buildTributacaoFederal(Element trib, Dps.TributacaoFederal data) {
+        if (data == null) {
+            return;
+        }
+        Element tribFed = element(trib, "tribFed");
+        Dps.PisCofins pisCofins = data.pisCofins();
+        if (pisCofins != null) {
+            Element piscofins = element(tribFed, "piscofins");
+            append(piscofins, "CST", pisCofins.cst());
+            append(piscofins, "vBCPisCofins", money(pisCofins.baseCalculo()));
+            append(piscofins, "pAliqPis", percentage(pisCofins.aliquotaPis()));
+            append(piscofins, "pAliqCofins", percentage(pisCofins.aliquotaCofins()));
+            append(piscofins, "vPis", money(pisCofins.valorPis()));
+            append(piscofins, "vCofins", money(pisCofins.valorCofins()));
+            append(piscofins, "tpRetPisCofins", pisCofins.tipoRetencao());
+        }
+        append(tribFed, "vRetCP", money(data.valorRetidoCp()));
+        append(tribFed, "vRetIRRF", money(data.valorRetidoIrrf()));
+        append(tribFed, "vRetCSLL", money(data.valorRetidoCsll()));
     }
 
     private void buildTotalTributos(Element trib, Dps.Tributacao data) {
@@ -171,6 +222,9 @@ public final class DpsXmlBuilder {
     }
 
     private static String money(BigDecimal value) {
+        if (value == null) {
+            return null;
+        }
         return value.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 

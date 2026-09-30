@@ -85,7 +85,24 @@ public record Dps(String versao, InfDps infDps) {
         }
     }
 
-    public record Valores(BigDecimal valorServico, Tributacao tributacao) {
+    public record Valores(
+        BigDecimal valorServico,
+        Tributacao tributacao,
+        BigDecimal valorRecebido,
+        Descontos descontos,
+        DeducaoReducao deducaoReducao
+    ) {
+        public Valores(BigDecimal valorServico, Tributacao tributacao) {
+            this(valorServico, tributacao, null, null, null);
+        }
+    }
+
+    /** vDescCondIncond: descontos incondicionado e condicionado, em R$. */
+    public record Descontos(BigDecimal incondicionado, BigDecimal condicionado) {
+    }
+
+    /** vDedRed por percentual (pDR) ou por valor (vDR); o XSD aceita so um dos dois. */
+    public record DeducaoReducao(BigDecimal percentual, BigDecimal valor) {
     }
 
     public record Tributacao(
@@ -94,7 +111,13 @@ public record Dps(String versao, InfDps infDps) {
         Integer indicadorTotalTributos,
         BigDecimal percentualTotalTributosSimplesNacional,
         TotalTributos valorTotalTributos,
-        TotalTributos percentualTotalTributos
+        TotalTributos percentualTotalTributos,
+        String codigoPaisResultado,
+        Integer tipoImunidade,
+        ExigibilidadeSuspensa exigibilidadeSuspensa,
+        BeneficioMunicipal beneficioMunicipal,
+        BigDecimal aliquotaIssqn,
+        TributacaoFederal tributacaoFederal
     ) {
         public Tributacao {
             var informados = new ArrayList<String>();
@@ -128,6 +151,50 @@ public record Dps(String versao, InfDps infDps) {
         ) {
             this(tributacaoIssqn, tipoRetencaoIssqn, indicadorTotalTributos, percentualTotalTributosSimplesNacional, null, null);
         }
+
+        public Tributacao(
+            Integer tributacaoIssqn,
+            Integer tipoRetencaoIssqn,
+            Integer indicadorTotalTributos,
+            BigDecimal percentualTotalTributosSimplesNacional,
+            TotalTributos valorTotalTributos,
+            TotalTributos percentualTotalTributos
+        ) {
+            this(tributacaoIssqn, tipoRetencaoIssqn, indicadorTotalTributos, percentualTotalTributosSimplesNacional,
+                valorTotalTributos, percentualTotalTributos, null, null, null, null, null, null);
+        }
+    }
+
+    /** exigSusp: tipo da suspensao da exigibilidade do ISSQN e numero do processo. */
+    public record ExigibilidadeSuspensa(Integer tipo, String numeroProcesso) {
+    }
+
+    /** BM: beneficio municipal com reducao da base de calculo por valor (vRedBCBM) ou percentual (pRedBCBM). */
+    public record BeneficioMunicipal(
+        String numero,
+        BigDecimal valorReducaoBaseCalculo,
+        BigDecimal percentualReducaoBaseCalculo
+    ) {
+    }
+
+    /** tribFed: PIS/COFINS e retencoes de CP, IRRF e CSLL. */
+    public record TributacaoFederal(
+        PisCofins pisCofins,
+        BigDecimal valorRetidoCp,
+        BigDecimal valorRetidoIrrf,
+        BigDecimal valorRetidoCsll
+    ) {
+    }
+
+    public record PisCofins(
+        String cst,
+        BigDecimal baseCalculo,
+        BigDecimal aliquotaPis,
+        BigDecimal aliquotaCofins,
+        BigDecimal valorPis,
+        BigDecimal valorCofins,
+        Integer tipoRetencao
+    ) {
     }
 
     /** Total aproximado dos tributos por esfera (Lei 12.741/2012): em R$ no vTotTrib, em % no pTotTrib. */

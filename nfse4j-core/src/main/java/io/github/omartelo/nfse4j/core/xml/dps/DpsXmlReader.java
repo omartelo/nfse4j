@@ -148,9 +148,80 @@ public final class DpsXmlReader {
             integerOrNull(text(valores, "indTotTrib")),
             decimalOrNull(text(valores, "pTotTribSN")),
             totalTributos(firstByLocalName(valores, "vTotTrib"), "vTotTribFed", "vTotTribEst", "vTotTribMun"),
-            totalTributos(firstByLocalName(valores, "pTotTrib"), "pTotTribFed", "pTotTribEst", "pTotTribMun")
+            totalTributos(firstByLocalName(valores, "pTotTrib"), "pTotTribFed", "pTotTribEst", "pTotTribMun"),
+            text(valores, "cPaisResult"),
+            integerOrNull(text(valores, "tpImunidade")),
+            exigibilidadeSuspensa(firstByLocalName(valores, "exigSusp")),
+            beneficioMunicipal(firstByLocalName(valores, "BM")),
+            decimalOrNull(text(valores, "pAliq")),
+            tributacaoFederal(firstByLocalName(valores, "tribFed"))
         );
-        return new Dps.Valores(decimalOrNull(text(valores, "vServ")), tributacao);
+        return new Dps.Valores(
+            decimalOrNull(text(valores, "vServ")),
+            tributacao,
+            decimalOrNull(text(valores, "vReceb")),
+            descontos(firstByLocalName(valores, "vDescCondIncond")),
+            deducaoReducao(firstByLocalName(valores, "vDedRed"))
+        );
+    }
+
+    private static Dps.Descontos descontos(Element descontos) {
+        if (descontos == null) {
+            return null;
+        }
+        return new Dps.Descontos(decimalOrNull(text(descontos, "vDescIncond")), decimalOrNull(text(descontos, "vDescCond")));
+    }
+
+    private static Dps.DeducaoReducao deducaoReducao(Element deducaoReducao) {
+        if (deducaoReducao == null) {
+            return null;
+        }
+        return new Dps.DeducaoReducao(decimalOrNull(text(deducaoReducao, "pDR")), decimalOrNull(text(deducaoReducao, "vDR")));
+    }
+
+    private static Dps.ExigibilidadeSuspensa exigibilidadeSuspensa(Element exigSusp) {
+        if (exigSusp == null) {
+            return null;
+        }
+        return new Dps.ExigibilidadeSuspensa(integerOrNull(text(exigSusp, "tpSusp")), text(exigSusp, "nProcesso"));
+    }
+
+    private static Dps.BeneficioMunicipal beneficioMunicipal(Element bm) {
+        if (bm == null) {
+            return null;
+        }
+        return new Dps.BeneficioMunicipal(
+            text(bm, "nBM"),
+            decimalOrNull(text(bm, "vRedBCBM")),
+            decimalOrNull(text(bm, "pRedBCBM"))
+        );
+    }
+
+    private static Dps.TributacaoFederal tributacaoFederal(Element tribFed) {
+        if (tribFed == null) {
+            return null;
+        }
+        return new Dps.TributacaoFederal(
+            pisCofins(firstByLocalName(tribFed, "piscofins")),
+            decimalOrNull(text(tribFed, "vRetCP")),
+            decimalOrNull(text(tribFed, "vRetIRRF")),
+            decimalOrNull(text(tribFed, "vRetCSLL"))
+        );
+    }
+
+    private static Dps.PisCofins pisCofins(Element piscofins) {
+        if (piscofins == null) {
+            return null;
+        }
+        return new Dps.PisCofins(
+            text(piscofins, "CST"),
+            decimalOrNull(text(piscofins, "vBCPisCofins")),
+            decimalOrNull(text(piscofins, "pAliqPis")),
+            decimalOrNull(text(piscofins, "pAliqCofins")),
+            decimalOrNull(text(piscofins, "vPis")),
+            decimalOrNull(text(piscofins, "vCofins")),
+            integerOrNull(text(piscofins, "tpRetPisCofins"))
+        );
     }
 
     private static Dps.TotalTributos totalTributos(Element total, String federal, String estadual, String municipal) {
