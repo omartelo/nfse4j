@@ -91,10 +91,25 @@ public record Dps(String versao, InfDps infDps) {
         Integer tributacaoIssqn,
         Integer tipoRetencaoIssqn,
         Integer indicadorTotalTributos,
-        BigDecimal percentualTotalTributosSimplesNacional
+        BigDecimal percentualTotalTributosSimplesNacional,
+        TotalTributos valorTotalTributos,
+        TotalTributos percentualTotalTributos
     ) {
         public Tributacao(Integer tributacaoIssqn, Integer tipoRetencaoIssqn, Integer indicadorTotalTributos) {
             this(tributacaoIssqn, tipoRetencaoIssqn, indicadorTotalTributos, null);
         }
+
+        public Tributacao(
+            Integer tributacaoIssqn,
+            Integer tipoRetencaoIssqn,
+            Integer indicadorTotalTributos,
+            BigDecimal percentualTotalTributosSimplesNacional
+        ) {
+            this(tributacaoIssqn, tipoRetencaoIssqn, indicadorTotalTributos, percentualTotalTributosSimplesNacional, null, null);
+        }
+    }
+
+    /** Total aproximado dos tributos por esfera (Lei 12.741/2012): em R$ no vTotTrib, em % no pTotTrib. */
+    public record TotalTributos(BigDecimal federal, BigDecimal estadual, BigDecimal municipal) {
     }
 }

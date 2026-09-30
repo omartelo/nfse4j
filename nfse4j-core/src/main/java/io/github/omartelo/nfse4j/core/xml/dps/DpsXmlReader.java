@@ -124,9 +124,22 @@ public final class DpsXmlReader {
             integerOrNull(text(valores, "tribISSQN")),
             integerOrNull(text(valores, "tpRetISSQN")),
             integerOrNull(text(valores, "indTotTrib")),
-            decimalOrNull(text(valores, "pTotTribSN"))
+            decimalOrNull(text(valores, "pTotTribSN")),
+            totalTributos(firstByLocalName(valores, "vTotTrib"), "vTotTribFed", "vTotTribEst", "vTotTribMun"),
+            totalTributos(firstByLocalName(valores, "pTotTrib"), "pTotTribFed", "pTotTribEst", "pTotTribMun")
         );
         return new Dps.Valores(decimalOrNull(text(valores, "vServ")), tributacao);
+    }
+
+    private static Dps.TotalTributos totalTributos(Element total, String federal, String estadual, String municipal) {
+        if (total == null) {
+            return null;
+        }
+        return new Dps.TotalTributos(
+            decimalOrNull(text(total, federal)),
+            decimalOrNull(text(total, estadual)),
+            decimalOrNull(text(total, municipal))
+        );
     }
 
     private static String versaoDaDps(Element infDps) {

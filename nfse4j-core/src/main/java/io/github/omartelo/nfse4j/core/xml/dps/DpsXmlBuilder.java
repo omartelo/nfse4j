@@ -13,6 +13,8 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import java.io.StringWriter;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 public final class DpsXmlBuilder {
     private static final String NAMESPACE = "http://www.sped.fazenda.gov.br/nfse";
@@ -121,15 +123,35 @@ public final class DpsXmlBuilder {
         Element tribMun = element(trib, "tribMun");
         append(tribMun, "tribISSQN", data.tributacao().tributacaoIssqn());
         append(tribMun, "tpRetISSQN", data.tributacao().tipoRetencaoIssqn());
+        buildTotalTributos(trib, data.tributacao());
+    }
 
-        if (
-            data.tributacao().indicadorTotalTributos() != null
-                || data.tributacao().percentualTotalTributosSimplesNacional() != null
-        ) {
-            Element totalTributos = element(trib, "totTrib");
-            append(totalTributos, "indTotTrib", data.tributacao().indicadorTotalTributos());
-            append(totalTributos, "pTotTribSN", percentage(data.tributacao().percentualTotalTributosSimplesNacional()));
+    private void buildTotalTributos(Element trib, Dps.Tributacao data) {
+        boolean informaTotalTributos = Stream.of(
+            data.valorTotalTributos(),
+            data.percentualTotalTributos(),
+            data.indicadorTotalTributos(),
+            data.percentualTotalTributosSimplesNacional()
+        ).anyMatch(Objects::nonNull);
+        if (!informaTotalTributos) {
+            return;
         }
+
+        Element totalTributos = element(trib, "totTrib");
+        if (data.valorTotalTributos() != null) {
+            Element valor = element(totalTributos, "vTotTrib");
+            append(valor, "vTotTribFed", money(data.valorTotalTributos().federal()));
+            append(valor, "vTotTribEst", money(data.valorTotalTributos().estadual()));
+            append(valor, "vTotTribMun", money(data.valorTotalTributos().municipal()));
+        }
+        if (data.percentualTotalTributos() != null) {
+            Element percentual = element(totalTributos, "pTotTrib");
+            append(percentual, "pTotTribFed", percentage(data.percentualTotalTributos().federal()));
+            append(percentual, "pTotTribEst", percentage(data.percentualTotalTributos().estadual()));
+            append(percentual, "pTotTribMun", percentage(data.percentualTotalTributos().municipal()));
+        }
+        append(totalTributos, "indTotTrib", data.indicadorTotalTributos());
+        append(totalTributos, "pTotTribSN", percentage(data.percentualTotalTributosSimplesNacional()));
     }
 
     private static Element element(Element parent, String name) {

@@ -12,6 +12,12 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   coluna, elemento e mensagem do schema; nada é enviado. `XmlSchemaValidator` é público para validar
   DPS e pedido de registro de evento avulsos.
 
+### Corrigido
+- **Reemissão a partir de nota de exemplo gerava DPS sem `totTrib`.** O leitor descartava
+  `vTotTrib` e `pTotTrib` do XML de exemplo, e o `<trib>` saía sem `totTrib`, obrigatório no XSD da
+  DPS v1.01, então a SEFIN recusaria a nota. O `Dps.Tributacao` passa a modelar os dois grupos
+  (federal, estadual e municipal) e eles são lidos e gerados na ordem do XSD.
+
 ### Alterado
 - O workflow de release passa a publicar o `nfse4j-core` e o `nfse4j-danfse` no Maven Central ao
   receber uma tag `v*`, depois de conferir que a tag bate com a versão do `gradle.properties`.

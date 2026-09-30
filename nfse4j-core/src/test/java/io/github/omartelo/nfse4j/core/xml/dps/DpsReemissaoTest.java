@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -85,5 +86,50 @@ class DpsReemissaoTest {
 
         assertThrows(DpsXmlException.class, () -> DpsReemissao.reemitir(
             semPrestador, new DpsReemissao.Overrides(1L, null, null, null, null, null, null)));
+    }
+
+    private static String exemploComTotTrib(String conteudoTotTrib) {
+        return """
+            <NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01"><infNFSe Id="NFS1">
+              <DPS versao="1.01"><infDPS Id="DPS1">
+                <tpAmb>2</tpAmb><dhEmi>2026-01-15T10:00:00-03:00</dhEmi><verAplic>EmissorWeb</verAplic>
+                <serie>00900</serie><nDPS>10</nDPS><dCompet>2026-01-15</dCompet><tpEmit>1</tpEmit>
+                <cLocEmi>3550308</cLocEmi>
+                <prest><CNPJ>12345678000199</CNPJ><regTrib><opSimpNac>1</opSimpNac><regEspTrib>0</regEspTrib></regTrib></prest>
+                <toma><CPF>11122233344</CPF><xNome>Tomador</xNome></toma>
+                <serv><locPrest><cLocPrestacao>3550308</cLocPrestacao></locPrest>
+                  <cServ><cTribNac>010101</cTribNac><xDescServ>Servico</xDescServ></cServ></serv>
+                <valores><vServPrest><vServ>250.00</vServ></vServPrest>
+                  <trib><tribMun><tribISSQN>1</tribISSQN><tpRetISSQN>1</tpRetISSQN></tribMun>
+                    <totTrib>%s</totTrib></trib></valores>
+              </infDPS></DPS>
+            </infNFSe></NFSe>
+            """.formatted(conteudoTotTrib);
+    }
+
+    private static String reemitirXml(String exemploXml) {
+        Dps re = DpsReemissao.reemitir(DpsXmlReader.read(exemploXml), new DpsReemissao.Overrides(
+            11L, null, null, null, null, null, null));
+        return new DpsXmlBuilder().build(re);
+    }
+
+    @Test
+    void reemissaoPreservaValorTotalDosTributos() {
+        String xml = reemitirXml(exemploComTotTrib(
+            "<vTotTrib><vTotTribFed>33.13</vTotTribFed><vTotTribEst>0.00</vTotTribEst>"
+                + "<vTotTribMun>4.80</vTotTribMun></vTotTrib>"));
+
+        assertTrue(xml.contains("<totTrib><vTotTrib><vTotTribFed>33.13</vTotTribFed>"
+            + "<vTotTribEst>0.00</vTotTribEst><vTotTribMun>4.80</vTotTribMun></vTotTrib></totTrib>"), xml);
+    }
+
+    @Test
+    void reemissaoPreservaPercentualTotalDosTributos() {
+        String xml = reemitirXml(exemploComTotTrib(
+            "<pTotTrib><pTotTribFed>13.25</pTotTribFed><pTotTribEst>0.00</pTotTribEst>"
+                + "<pTotTribMun>1.92</pTotTribMun></pTotTrib>"));
+
+        assertTrue(xml.contains("<totTrib><pTotTrib><pTotTribFed>13.25</pTotTribFed>"
+            + "<pTotTribEst>0.00</pTotTribEst><pTotTribMun>1.92</pTotTribMun></pTotTrib></totTrib>"), xml);
     }
 }
