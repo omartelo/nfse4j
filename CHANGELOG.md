@@ -5,6 +5,14 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [0.5.0] - 2026-09-29
+
+### Corrigido
+- **CNPJ alfanumérico (IN RFB 2.229/2024) era recusado.** A normalização removia as letras antes da
+  checagem de tamanho, então não era possível emitir nem cancelar nota para esses CNPJs, e o
+  `CertificadoA1` não os reconhecia no subject. Agora só a máscara é removida. CPF e CNPJ numéricos
+  seguem como antes.
+
 ### Alterado
 - **Projeto renomeado para `nfse4j`** (antes `nfse-java-mcp`), mantido a partir deste fork. Mudanças
   incompatíveis para quem consome:
@@ -113,7 +121,8 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - `nfse-cli` — CLI para humanos e agentes que rodam shell.
 - Homologação por padrão; produção exige confirmação explícita.
 
-[Não lançado]: https://github.com/omartelo/nfse4j/compare/v0.4.5...HEAD
+[Não lançado]: https://github.com/omartelo/nfse4j/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/omartelo/nfse4j/releases/tag/v0.5.0
 [0.4.5]: https://github.com/rafael-matos-dev/nfse-java-mcp/releases/tag/v0.4.5
 [0.4.4]: https://github.com/rafael-matos-dev/nfse-java-mcp/releases/tag/v0.4.4
 [0.4.3]: https://github.com/rafael-matos-dev/nfse-java-mcp/releases/tag/v0.4.3
