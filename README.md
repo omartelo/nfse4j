@@ -195,7 +195,8 @@ byte[] pdf = DanfseGenerator.gerarPdf(nfseXml, false, cfg, Path.of("danfse.pdf")
 ## Limitações
 
 - DANFSe: o brasão e o contato da prefeitura dependem de `DanfseConfig` (não há API pública para obtê-los); a seção IBS/CBS é "best-effort" até haver nota real com reforma para validar.
-- Geração de classes JAXB a partir dos XSDs oficiais e endurecimento de validações: próximos passos.
+- A DPS e o pedido de cancelamento são validados contra o XSD oficial v1.01 antes do envio. O envio genérico de evento (`registrarEventoXml`) ainda não é validado.
+- Geração de classes JAXB a partir dos XSDs oficiais: próximo passo.
 
 ## Licença
 
