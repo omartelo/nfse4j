@@ -9,11 +9,14 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
 import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.ValidatorHandler;
+import org.w3c.dom.ls.DOMImplementationLS;
+import org.w3c.dom.ls.LSInput;
 import org.xml.sax.Attributes;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
@@ -28,6 +31,8 @@ import org.xml.sax.helpers.XMLFilterImpl;
  * no XSD a {@code ds:Signature} e opcional e, quando presente, e validada contra o xmldsig-core-schema.
  */
 public final class XmlSchemaValidator {
+    /** Tipo que o LSResourceResolver recebe ao resolver um DTD externo (DOM Level 3 Load and Save). */
+    private static final String XML_DTD_TYPE = "http://www.w3.org/TR/REC-xml";
     private static final Schema DPS = compilar("DPS_v1.01.xsd");
     private static final Schema PEDIDO_REGISTRO_EVENTO = compilar("pedRegEvento_v1.01.xsd");
 
@@ -80,12 +85,35 @@ public final class XmlSchemaValidator {
         }
         try {
             SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-            // O xmldsig-core-schema.xsd oficial declara DOCTYPE com DTD em http://www.w3.org/.
-            // Bloquear DTD externo evita acesso a rede; o DTD interno do arquivo continua valendo.
+            // O xmldsig-core-schema.xsd oficial declara DOCTYPE com DTD em http://www.w3.org/. O resolver
+            // entrega um DTD externo vazio, sem ir a rede; o subconjunto interno do arquivo continua valendo.
+            // So bloquear o acesso (ACCESS_EXTERNAL_DTD vazio) faz o JDK 21 falhar ao tentar le-lo.
+            factory.setResourceResolver(XmlSchemaValidator::dtdExternoVazio);
             factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
             return factory.newSchema(xsd);
         } catch (SAXException exception) {
             throw new IllegalStateException("Nao foi possivel carregar o XSD " + arquivo + ".", exception);
+        }
+    }
+
+    private static LSInput dtdExternoVazio(
+        String type, String namespaceUri, String publicId, String systemId, String baseUri
+    ) {
+        if (!XML_DTD_TYPE.equals(type)) {
+            return null;
+        }
+        try {
+            DOMImplementationLS dom = (DOMImplementationLS) DocumentBuilderFactory.newInstance()
+                .newDocumentBuilder()
+                .getDOMImplementation();
+            LSInput vazio = dom.createLSInput();
+            vazio.setPublicId(publicId);
+            vazio.setSystemId(systemId);
+            vazio.setBaseURI(baseUri);
+            vazio.setStringData("");
+            return vazio;
+        } catch (ParserConfigurationException exception) {
+            throw new IllegalStateException("Nao foi possivel criar o parser DOM do JDK.", exception);
         }
     }
 
