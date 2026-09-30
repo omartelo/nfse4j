@@ -142,7 +142,7 @@ O fluxo mais simples para quem já emite: aponte uma nota anterior (XML de DPS o
 
 ## DANFSe (PDF) — geração local
 
-> A API oficial de download do DANFSe foi desligada em 1º/07/2026 (Nota Técnica SE/CGNFS-e nº 008/2026). Desde então, cada emissor gera o DANFSe localmente a partir do XML autorizado da NFS-e.
+> A API oficial de download do DANFSe foi desligada (Nota Técnica SE/CGNFS-e nº 008/2026). Cada emissor gera o DANFSe localmente a partir do XML autorizado da NFS-e.
 
 O módulo `nfse4j-danfse` gera o PDF do DANFSe **localmente** a partir do XML da NFS-e (o `<NFSe>` que a SEFIN devolve na emissão, no campo `nfseXmlGZipB64`).
 
@@ -154,9 +154,11 @@ byte[] pdf = DanfseGenerator.gerarPdf(nfseXml, /* producao */ false, Path.of("da
 CLI: `java -jar nfse4j-cli.jar danfse --xml nota.xml --saida danfse.pdf`
 MCP: ferramenta `gerar_danfse` (aceita o XML, um arquivo, ou o `nfseXmlGZipB64`).
 
-O layout segue o padrão nacional (NT 008): logo oficial da NFS-e, aviso **"NFS-e SEM VALIDADE JURÍDICA"** em homologação, e a seção **IBS/CBS** (NT 009) quando presente no XML. Render via HTML/CSS → PDF (OpenHTMLtoPDF) + QR Code (ZXing).
+O layout segue o modelo do **Anexo I da NT 008/2026 v1.02** ("DANFSe v2.0"); o estado item a item está em [`docs/nt008-checklist.md`](docs/nt008-checklist.md). Inclui o logo oficial da NFS-e, o aviso **"NFS-e SEM VALIDADE JURÍDICA"** em homologação, a seção **IBS/CBS** (NT 009) quando presente no XML e a fonte Liberation Sans (métrica da Arial exigida pela NT) embutida no PDF. Render via HTML/CSS → PDF (OpenHTMLtoPDF) + QR Code (ZXing).
 
-O nome do município dos endereços é resolvido a partir do próprio XML quando possível; para municípios de fora (ex.: tomador em outra cidade), consulta a **API do IBGE** (com cache e *fallback* gracioso ao código). Para gerar 100% offline, use `-Dnfse.danfse.ibge=false`.
+`DanfseGenerator.gerarPdf(nfseXml)` infere o ambiente pelo `tpAmb` do próprio XML.
+
+O nome do município dos endereços é resolvido a partir do próprio XML quando possível; para municípios de fora (ex.: tomador em outra cidade), consulta a **API do IBGE** (com cache e *fallback* gracioso ao código). Para gerar 100% offline, use `-Dnfse4j.danfse.ibge=false`.
 
 ### Logo do emitente (prestador)
 

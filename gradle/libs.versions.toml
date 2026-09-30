@@ -5,6 +5,7 @@ mcp = "1.0.2"
 bouncycastle = "1.78.1"
 openhtmltopdf = "1.0.10"
 zxing = "3.5.4"
+pdfbox = "2.0.36"
 shadow = "9.6.1"
 maven-publish = "0.37.0"
 
@@ -19,6 +20,8 @@ bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = 
 bouncycastle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
 # HTML/CSS -> PDF (LGPL 2.1, dependencia de runtime). PDFBox e Apache-2.0.
 openhtmltopdf-pdfbox = { module = "com.openhtmltopdf:openhtmltopdf-pdfbox", version.ref = "openhtmltopdf" }
+# Fixa o PDFBox acima do 2.0.24 que o openhtmltopdf 1.0.10 traz por transitividade (Apache-2.0).
+pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
 # QR Code (Apache-2.0).
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 

@@ -5,7 +5,9 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -15,9 +17,14 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
- * Le o XML autorizado da NFS-e ({@code <NFSe><infNFSe>...<DPS><infDPS>}) e monta o {@link Danfse}.
- * Combina campos do nivel administrativo (infNFSe: numeros, municipios por nome, emitente, valor
- * liquido, IBS/CBS) com os da DPS embutida (tomador, servico, tributacao). DOM do JDK (sem libs).
+ * Le o XML autorizado da NFS-e ({@code <NFSe><infNFSe>...<DPS><infDPS>}) e monta o {@link Danfse}
+ * com os campos do modelo oficial da NT 008/2026. Combina o nivel administrativo (infNFSe: numeros,
+ * municipios por nome, valores apurados, IBS/CBS totais) com a DPS embutida (prestador, tomador,
+ * intermediario, servico, tributacao declarada). DOM do JDK (sem libs).
+ *
+ * <p>A navegacao usa filhos diretos ({@code child}/{@code descend}) nos pontos onde o mesmo nome
+ * existe em niveis diferentes (ex.: {@code valores} e {@code IBSCBS} existem em infNFSe e em
+ * infDPS) e busca em profundidade apenas dentro de escopos pequenos e sem ambiguidade.
  */
 public final class NfseXmlReader {
 
@@ -32,24 +39,39 @@ public final class NfseXmlReader {
             if (infNfse == null) {
                 throw new DanfseException("XML nao contem elemento infNFSe (esperado o XML autorizado da NFS-e).");
             }
-            Element dps = firstByLocalName(infNfse, "infDPS");
-            Element emit = firstByLocalName(infNfse, "emit");
-            Element prest = dps == null ? null : firstByLocalName(dps, "prest");
-            Element toma = dps == null ? null : firstByLocalName(dps, "toma");
-            Element serv = dps == null ? null : firstByLocalName(dps, "serv");
-            Element trib = dps == null ? null : firstByLocalName(dps, "trib");
-            Map<String, String> municipios = mapaMunicipios(infNfse, dps, serv);
+            Element dpsWrap = child(infNfse, "DPS");
+            Element dps = dpsWrap != null ? child(dpsWrap, "infDPS") : firstByLocalName(infNfse, "infDPS");
+            Element emit = child(infNfse, "emit");
+            Element valoresNfse = child(infNfse, "valores");
+            Element ibsCbsNfse = child(infNfse, "IBSCBS");
+            Element prest = child(dps, "prest");
+            Element toma = child(dps, "toma");
+            Element interm = child(dps, "interm");
+            Element serv = child(dps, "serv");
+            Element valoresDps = child(dps, "valores");
+            Element trib = child(valoresDps, "trib");
+            Element tribMun = child(trib, "tribMun");
+            Element tribFed = child(trib, "tribFed");
+            Element totTrib = child(trib, "totTrib");
+            Element ibsCbsDps = child(dps, "IBSCBS");
+            Element dest = child(ibsCbsDps, "dest");
+            Map<String, String> municipios = mapaMunicipios(infNfse, dps, serv, ibsCbsNfse);
 
             return new Danfse(
                 chaveAcesso(infNfse),
                 homologacao(dps),
-                identificacao(infNfse, dps),
-                prestador(emit, prest, municipios),
-                tomador(toma, municipios),
-                servico(infNfse, serv, trib),
-                valores(infNfse, dps, trib),
-                primeiroNaoVazio(text(infNfse, "xOutInf"), text(dps, "xInfComp")),
-                ibsCbs(firstByLocalName(infNfse, "IBSCBS"))
+                identificacao(infNfse, dps, ibsCbsDps),
+                pessoa(emit, prest, municipios),
+                pessoa(toma, null, municipios),
+                pessoa(dest, null, municipios),
+                pessoa(interm, null, municipios),
+                servico(infNfse, serv),
+                tributacaoMunicipal(infNfse, valoresNfse, dps, valoresDps, tribMun, prest),
+                tributacaoFederal(tribFed),
+                ibsCbs(ibsCbsNfse, ibsCbsDps, valoresNfse, valoresDps, tribFed),
+                valores(valoresNfse, valoresDps),
+                totaisTributos(totTrib),
+                informacoesComplementares(infNfse, dps, serv, valoresNfse, ibsCbsDps)
             );
         } catch (DanfseException exception) {
             throw exception;
@@ -61,14 +83,13 @@ public final class NfseXmlReader {
     // Coleta pares codigo->nome de municipio que o proprio XML fornece (cLocIncid/xLocIncid,
     // cLocEmi/xLocEmi, cLocPrestacao/xLocPrestacao). Resolve o nome no endereco do prestador/tomador
     // quando o municipio for um desses (caso comum: prestador na cidade de emissao). Sem tabela IBGE.
-    private static Map<String, String> mapaMunicipios(Element infNfse, Element dps, Element serv) {
+    private static Map<String, String> mapaMunicipios(Element infNfse, Element dps, Element serv, Element ibsCbsNfse) {
         Map<String, String> mapa = new HashMap<>();
-        addPar(mapa, text(infNfse, "cLocIncid"), text(infNfse, "xLocIncid"));
-        addPar(mapa, text(dps, "cLocEmi"), text(infNfse, "xLocEmi"));
-        Element locPrest = serv == null ? null : firstByLocalName(serv, "locPrest");
-        addPar(mapa, text(locPrest, "cLocPrestacao"), text(infNfse, "xLocPrestacao"));
-        Element ibs = firstByLocalName(infNfse, "IBSCBS");
-        addPar(mapa, text(ibs, "cLocalidadeIncid"), text(ibs, "xLocalidadeIncid"));
+        addPar(mapa, childText(infNfse, "cLocIncid"), childText(infNfse, "xLocIncid"));
+        addPar(mapa, childText(dps, "cLocEmi"), childText(infNfse, "xLocEmi"));
+        Element locPrest = child(serv, "locPrest");
+        addPar(mapa, childText(locPrest, "cLocPrestacao"), childText(infNfse, "xLocPrestacao"));
+        addPar(mapa, text(ibsCbsNfse, "cLocalidadeIncid"), text(ibsCbsNfse, "xLocalidadeIncid"));
         return mapa;
     }
 
@@ -83,7 +104,7 @@ public final class NfseXmlReader {
     // producao pode ter ambGer=2 e tpAmb=1, e usar ambGer marcaria producao como homologacao
     // (estampando "SEM VALIDADE JURIDICA" numa nota valida).
     private static boolean homologacao(Element dps) {
-        return "2".equals(text(dps, "tpAmb"));
+        return "2".equals(childText(dps, "tpAmb"));
     }
 
     private static String chaveAcesso(Element infNfse) {
@@ -94,125 +115,331 @@ public final class NfseXmlReader {
         return id.startsWith("NFS") ? id.substring(3) : id;
     }
 
-    private static Danfse.Identificacao identificacao(Element infNfse, Element dps) {
+    private static Danfse.Identificacao identificacao(Element infNfse, Element dps, Element ibsCbsDps) {
         return new Danfse.Identificacao(
-            text(infNfse, "nNFSe"),
-            dateOrNull(text(dps, "dCompet")),
-            offsetOrNull(text(infNfse, "dhProc")),
-            text(dps, "nDPS"),
-            text(dps, "serie"),
-            offsetOrNull(text(dps, "dhEmi")),
-            text(infNfse, "xLocEmi"),
-            text(infNfse, "xLocPrestacao")
+            childText(infNfse, "nNFSe"),
+            dateOrNull(childText(dps, "dCompet")),
+            offsetOrNull(childText(infNfse, "dhProc")),
+            childText(dps, "nDPS"),
+            childText(dps, "serie"),
+            offsetOrNull(childText(dps, "dhEmi")),
+            emitente(childText(dps, "tpEmit")),
+            situacao(childText(infNfse, "cStat")),
+            finalidade(childText(ibsCbsDps, "finNFSe")),
+            childText(infNfse, "xLocEmi"),
+            ambienteGerador(childText(infNfse, "ambGer")),
+            tipoAmbiente(childText(dps, "tpAmb")),
+            childText(infNfse, "xLocPrestacao")
         );
     }
 
-    private static Danfse.Pessoa prestador(Element emit, Element prest, Map<String, String> municipios) {
-        Element regTrib = prest == null ? null : firstByLocalName(prest, "regTrib");
-        return new Danfse.Pessoa(
-            text(emit, "CNPJ"),
-            text(emit, "CPF"),
-            text(emit, "IM"),
-            text(emit, "xNome"),
-            text(emit, "fone"),
-            text(emit, "email"),
-            endereco(emit == null ? null : firstByLocalName(emit, "enderNac"), false, municipios),
-            simplesNacional(text(regTrib, "opSimpNac")),
-            regimeApuracao(text(regTrib, "regApTribSN"))
-        );
-    }
-
-    private static Danfse.Pessoa tomador(Element toma, Map<String, String> municipios) {
-        if (toma == null) {
-            return null;
-        }
-        Element end = firstByLocalName(toma, "end");
-        return new Danfse.Pessoa(
-            text(toma, "CNPJ"),
-            text(toma, "CPF"),
-            text(toma, "IM"),
-            text(toma, "xNome"),
-            text(toma, "fone"),
-            text(toma, "email"),
-            endereco(end, true, municipios),
-            null,
-            null
-        );
-    }
-
-    /** No emit o endereco fica direto em enderNac; no tomador ha um nivel endNac aninhado dentro de end. */
-    private static Danfse.Endereco endereco(Element escopo, boolean tomador, Map<String, String> municipios) {
+    /**
+     * Prestador (emit do infNFSe + regTrib da DPS) ou tomador/destinatario/intermediario (escopo
+     * proprio da DPS). No emit o endereco fica direto em enderNac; nos demais ha um <end> com
+     * endNac/endExt aninhado.
+     */
+    private static Danfse.Pessoa pessoa(Element escopo, Element prestRegTrib, Map<String, String> municipios) {
         if (escopo == null) {
             return null;
         }
-        Element nac = tomador ? firstByLocalName(escopo, "endNac") : escopo;
-        String cMun = text(nac, "cMun");
+        Element regTrib = prestRegTrib == null ? null : child(prestRegTrib, "regTrib");
+        Danfse.Endereco endereco;
+        Element enderNac = child(escopo, "enderNac");
+        if (enderNac != null) {
+            endereco = endereco(enderNac, enderNac, municipios);
+        } else {
+            Element end = child(escopo, "end");
+            Element nac = end == null ? null : primeiroNaoNulo(child(end, "endNac"), child(end, "endExt"));
+            endereco = end == null ? null : endereco(end, nac != null ? nac : end, municipios);
+        }
+        return new Danfse.Pessoa(
+            childText(escopo, "CNPJ"),
+            childText(escopo, "CPF"),
+            childText(escopo, "NIF"),
+            childText(escopo, "IM"),
+            childText(escopo, "xNome"),
+            childText(escopo, "fone"),
+            childText(escopo, "email"),
+            endereco,
+            simplesNacional(childText(regTrib, "opSimpNac")),
+            regimeApuracao(childText(regTrib, "regApTribSN"))
+        );
+    }
+
+    private static Danfse.Endereco endereco(Element escopo, Element nac, Map<String, String> municipios) {
+        String cMun = childText(nac, "cMun");
         String nomeMun = cMun != null ? municipios.getOrDefault(cMun, cMun) : null;
         return new Danfse.Endereco(
-            text(escopo, "xLgr"),
-            text(escopo, "nro"),
-            text(escopo, "xCpl"),
-            text(escopo, "xBairro"),
+            childText(escopo, "xLgr"),
+            childText(escopo, "nro"),
+            childText(escopo, "xCpl"),
+            childText(escopo, "xBairro"),
+            cMun,
             nomeMun,
-            text(escopo, "UF"),
-            text(nac, "CEP")
+            primeiroNaoVazio(childText(escopo, "UF"), childText(nac, "UF")),
+            primeiroNaoVazio(childText(nac, "CEP"), childText(nac, "cEndPost"))
         );
     }
 
-    private static Danfse.Servico servico(Element infNfse, Element serv, Element trib) {
-        Element tribMun = trib == null ? null : firstByLocalName(trib, "tribMun");
+    private static Danfse.Servico servico(Element infNfse, Element serv) {
+        Element cServ = child(serv, "cServ");
+        Element locPrest = child(serv, "locPrest");
         return new Danfse.Servico(
-            text(serv, "cTribNac"),
-            text(infNfse, "xTribNac"),
-            text(serv, "cTribMun"),
-            text(infNfse, "xTribMun"),
-            text(serv, "cNBS"),
-            text(infNfse, "xNBS"),
-            text(infNfse, "xLocPrestacao"),
-            text(serv, "xDescServ"),
-            tributacaoIssqn(text(tribMun, "tribISSQN")),
-            retencaoIssqn(text(tribMun, "tpRetISSQN")),
-            text(infNfse, "xLocIncid")
+            childText(cServ, "cTribNac"),
+            childText(infNfse, "xTribNac"),
+            childText(cServ, "cTribMun"),
+            childText(infNfse, "xTribMun"),
+            childText(cServ, "cNBS"),
+            childText(infNfse, "xNBS"),
+            childText(locPrest, "cLocPrestacao"),
+            childText(infNfse, "xLocPrestacao"),
+            childText(locPrest, "cPaisPrestacao"),
+            childText(cServ, "xDescServ")
         );
     }
 
-    private static Danfse.Valores valores(Element infNfse, Element dps, Element trib) {
-        Element valoresDps = dps == null ? null : firstByLocalName(dps, "valores");
-        Element vServPrest = valoresDps == null ? null : firstByLocalName(valoresDps, "vServPrest");
-        Element vDescCondIncond = valoresDps == null ? null : firstByLocalName(valoresDps, "vDescCondIncond");
-        Element infNfseValores = firstByLocalName(infNfse, "valores");
-        return new Danfse.Valores(
-            decimalOrNull(text(vServPrest, "vServ")),
-            decimalOrNull(text(vDescCondIncond, "vDescIncond")),
-            decimalOrNull(text(vDescCondIncond, "vDescCond")),
-            decimalOrNull(text(infNfseValores, "vLiq")),
-            null,
-            null,
-            null
-        );
-    }
-
-    private static Danfse.IbsCbs ibsCbs(Element ibsCbs) {
-        if (ibsCbs == null) {
+    private static Danfse.TributacaoMunicipal tributacaoMunicipal(Element infNfse, Element valoresNfse,
+            Element dps, Element valoresDps, Element tribMun, Element prest) {
+        if (tribMun == null && valoresNfse == null) {
             return null;
         }
-        // Estrutural (NT 009): totais ficam em totCIBS (vIBSTot = IBS, vCBS = CBS).
-        // Refinar quando houver exemplo real de nota com reforma tributaria.
-        return new Danfse.IbsCbs(
-            decimalOrNull(text(ibsCbs, "vIBSTot")),
-            decimalOrNull(text(ibsCbs, "vCBS")),
-            text(ibsCbs, "xLocalidadeIncid")
+        Element exigSusp = child(tribMun, "exigSusp");
+        Element bm = child(tribMun, "BM");
+        Element vDedRed = child(valoresDps, "vDedRed");
+        Element regTrib = child(prest, "regTrib");
+        return new Danfse.TributacaoMunicipal(
+            tributacaoIssqn(childText(tribMun, "tribISSQN")),
+            childText(infNfse, "cLocIncid"),
+            childText(infNfse, "xLocIncid"),
+            childText(tribMun, "cPaisResult"),
+            regimeEspecial(childText(regTrib, "regEspTrib")),
+            tipoImunidade(childText(tribMun, "tpImunidade")),
+            suspensao(childText(exigSusp, "tpSusp")),
+            childText(exigSusp, "nProcesso"),
+            beneficioMunicipal(childText(valoresNfse, "tpBM")),
+            primeiroDecimal(childText(valoresNfse, "vCalcBM"), childText(bm, "vRedBCBM")),
+            somaOuNull(
+                primeiroDecimal(childText(vDedRed, "vDR"), childText(valoresNfse, "vCalcDR")),
+                decimalOrNull(childText(valoresNfse, "vCalcReeRepRes"))),
+            decimalOrNull(text(child(valoresDps, "vDescCondIncond"), "vDescIncond")),
+            decimalOrNull(childText(valoresNfse, "vBC")),
+            decimalOrNull(childText(valoresNfse, "pAliqAplic")),
+            retencaoIssqn(childText(tribMun, "tpRetISSQN")),
+            decimalOrNull(childText(valoresNfse, "vISSQN"))
         );
+    }
+
+    private static Danfse.TributacaoFederal tributacaoFederal(Element tribFed) {
+        if (tribFed == null) {
+            return null;
+        }
+        Element piscofins = child(tribFed, "piscofins");
+        String tpRet = childText(piscofins, "tpRetPisCofins");
+        return new Danfse.TributacaoFederal(
+            decimalOrNull(childText(tribFed, "vRetIRRF")),
+            decimalOrNull(childText(tribFed, "vRetCP")),
+            decimalOrNull(childText(tribFed, "vRetCSLL")),
+            decimalOrNull(childText(piscofins, "vPis")),
+            decimalOrNull(childText(piscofins, "vCofins")),
+            tpRet,
+            retencaoPisCofins(tpRet)
+        );
+    }
+
+    /**
+     * IBS/CBS (NT 009, best-effort ate o leiaute entrar em producao): o declarado fica na DPS
+     * (CST, cClassTrib, cIndOp) e o apurado no infNFSe (totCIBS, aliquotas, vTotNF). A "Exclusoes e
+     * Reducoes da Base de Calculo" e o somatorio definido no item 2.4.5 da NT 008.
+     */
+    private static Danfse.IbsCbs ibsCbs(Element ibsCbsNfse, Element ibsCbsDps,
+            Element valoresNfse, Element valoresDps, Element tribFed) {
+        if (ibsCbsNfse == null && ibsCbsDps == null) {
+            return null;
+        }
+        Element gIbsCbs = ibsCbsDps == null ? null : firstByLocalName(ibsCbsDps, "gIBSCBS");
+        Element piscofins = child(tribFed, "piscofins");
+        BigDecimal exclusoes = somaOuNull(
+            decimalOrNull(text(child(valoresDps, "vDescCondIncond"), "vDescIncond")),
+            decimalOrNull(childText(valoresNfse, "vCalcReeRepRes")),
+            decimalOrNull(childText(valoresNfse, "vISSQN")),
+            decimalOrNull(childText(piscofins, "vPis")),
+            decimalOrNull(childText(piscofins, "vCofins")));
+        return new Danfse.IbsCbs(
+            text(gIbsCbs, "CST"),
+            text(gIbsCbs, "cClassTrib"),
+            childText(ibsCbsDps, "cIndOp"),
+            text(ibsCbsNfse, "cLocalidadeIncid"),
+            text(ibsCbsNfse, "xLocalidadeIncid"),
+            exclusoes,
+            decimalOrNull(text(child(ibsCbsNfse, "valores"), "vBC")),
+            decimalOrNull(text(ibsCbsNfse, "pRedAliqUF")),
+            decimalOrNull(text(ibsCbsNfse, "pRedAliqMun")),
+            decimalOrNull(text(ibsCbsNfse, "pRedAliqCBS")),
+            decimalOrNull(text(ibsCbsNfse, "pIBSUF")),
+            decimalOrNull(text(ibsCbsNfse, "pIBSMun")),
+            decimalOrNull(text(ibsCbsNfse, "pAliqEfetMun")),
+            decimalOrNull(text(ibsCbsNfse, "vIBSMun")),
+            decimalOrNull(text(ibsCbsNfse, "pAliqEfetUF")),
+            decimalOrNull(text(ibsCbsNfse, "vIBSUF")),
+            decimalOrNull(text(ibsCbsNfse, "vIBSTot")),
+            decimalOrNull(text(ibsCbsNfse, "pCBS")),
+            decimalOrNull(text(ibsCbsNfse, "pAliqEfetCBS")),
+            decimalOrNull(text(ibsCbsNfse, "vCBS")),
+            decimalOrNull(text(ibsCbsNfse, "vTotNF"))
+        );
+    }
+
+    private static Danfse.Valores valores(Element valoresNfse, Element valoresDps) {
+        Element vServPrest = child(valoresDps, "vServPrest");
+        Element vDescCondIncond = child(valoresDps, "vDescCondIncond");
+        return new Danfse.Valores(
+            decimalOrNull(childText(vServPrest, "vServ")),
+            decimalOrNull(childText(vDescCondIncond, "vDescIncond")),
+            decimalOrNull(childText(vDescCondIncond, "vDescCond")),
+            decimalOrNull(childText(valoresNfse, "vTotalRet")),
+            decimalOrNull(childText(valoresNfse, "vLiq"))
+        );
+    }
+
+    private static Danfse.TotaisTributos totaisTributos(Element totTrib) {
+        if (totTrib == null) {
+            return null;
+        }
+        Element vTotTrib = child(totTrib, "vTotTrib");
+        Element pTotTrib = child(totTrib, "pTotTrib");
+        return new Danfse.TotaisTributos(
+            decimalOrNull(childText(vTotTrib, "vTotTribFed")),
+            decimalOrNull(childText(vTotTrib, "vTotTribEst")),
+            decimalOrNull(childText(vTotTrib, "vTotTribMun")),
+            decimalOrNull(childText(pTotTrib, "pTotTribFed")),
+            decimalOrNull(childText(pTotTrib, "pTotTribEst")),
+            decimalOrNull(childText(pTotTrib, "pTotTribMun")),
+            decimalOrNull(childText(totTrib, "pTotTribSN")),
+            "0".equals(childText(totTrib, "indTotTrib"))
+        );
+    }
+
+    /**
+     * Uniao das informacoes complementares na ordem do item 2.4.5 da NT 008 (Inf. Cont.; NFS-e
+     * Subst.; Doc. Ref.; Cod. Obra; Insc. Imob.; Cod. Evt.; Doc. Tec.; Num. Ped.; Item Ped.;
+     * Inf. A. T. Mun.), separadas por pipes. A linha obrigatoria dos Totais Aproximados dos
+     * Tributos e montada na renderizacao a partir de {@link Danfse#totaisTributos()}.
+     */
+    private static String informacoesComplementares(Element infNfse, Element dps, Element serv,
+            Element valoresNfse, Element ibsCbsDps) {
+        Element infoCompl = firstByLocalName(serv, "infoCompl");
+        Element subst = child(dps, "subst");
+        Element obra = firstByLocalName(serv, "obra");
+        // O bloco imovel fica em infDPS/IBSCBS/imovel, irmao de serv: a busca com escopo em serv
+        // alcanca apenas a inscricao do bloco obra (serv/obra).
+        Element imovel = child(ibsCbsDps, "imovel");
+        List<String> partes = new ArrayList<>();
+        add(partes, "Inf. Cont.: ",
+            primeiroNaoVazio(childText(infoCompl, "xInfComp"), childText(dps, "xInfComp")));
+        add(partes, "NFS-e Subst.: ", childText(subst, "chSubstda"));
+        add(partes, "Doc. Ref.: ", text(infoCompl, "docRef"));
+        add(partes, "Cod. Obra: ", primeiroNaoVazio(childText(obra, "cObra"), text(serv, "cObra")));
+        add(partes, "Insc. Imob.: ",
+            primeiroNaoVazio(text(serv, "inscImobFisc"), childText(imovel, "inscImobFisc")));
+        add(partes, "Cod. Evt.: ", text(serv, "idAtvEvt"));
+        add(partes, "Doc. Tec.: ", text(infoCompl, "idDocTec"));
+        add(partes, "Núm. Ped.: ", childText(infoCompl, "xPed"));
+        add(partes, "Item Ped.: ", juntarVirgula(childTexts(child(infoCompl, "gItemPed"), "xItemPed")));
+        add(partes, "Inf. A. T. Mun.: ", childText(valoresNfse, "xOutInf"));
+        return partes.isEmpty() ? null : String.join(" | ", partes);
+    }
+
+    private static void add(List<String> partes, String prefixo, String valor) {
+        if (valor != null && !valor.isBlank()) {
+            partes.add(prefixo == null ? valor.trim() : prefixo + valor.trim());
+        }
     }
 
     // ---- mapeamentos de codigos para rotulos (fallback: o proprio codigo) ----
+
+    private static String emitente(String codigo) {
+        if (codigo == null) {
+            return null;
+        }
+        return switch (codigo) {
+            case "1" -> "Prestador";
+            case "2" -> "Tomador";
+            case "3" -> "Intermediário";
+            default -> codigo;
+        };
+    }
+
+    /** Situacao da NFS-e (TStat do leiaute 1.01). */
+    private static String situacao(String codigo) {
+        if (codigo == null) {
+            return null;
+        }
+        return switch (codigo) {
+            case "100" -> "NFS-e Gerada";
+            case "102" -> "NFS-e de Decisão Judicial";
+            case "103" -> "NFS-e Avulsa";
+            case "107" -> "NFS-e MEI";
+            default -> codigo;
+        };
+    }
+
+    /** Finalidade da emissao (TSRTCFinNFSe do leiaute 1.01). */
+    private static String finalidade(String codigo) {
+        if (codigo == null) {
+            return null;
+        }
+        return switch (codigo) {
+            case "0" -> "NFS-e regular";
+            default -> codigo;
+        };
+    }
+
+    /**
+     * Tipo de Beneficio Municipal (TBMISSQN do leiaute 1.01). As opcoes 2 a 4 sao descritas no
+     * leiaute referenciando as tags do proprio grupo (ppBM, vInfoBM, aliqDifBM); aqui viram texto
+     * legivel, ja que o DANFSe exibe a descricao e nao o leiaute.
+     */
+    private static String beneficioMunicipal(String codigo) {
+        if (codigo == null) {
+            return null;
+        }
+        return switch (codigo) {
+            case "1" -> "Isenção";
+            case "2" -> "Redução da Base de Cálculo (%)";
+            case "3" -> "Redução da Base de Cálculo (R$)";
+            case "4" -> "Alíquota Diferenciada";
+            default -> codigo;
+        };
+    }
+
+    private static String ambienteGerador(String codigo) {
+        if (codigo == null) {
+            return null;
+        }
+        return switch (codigo) {
+            case "1" -> "Prefeitura";
+            case "2" -> "Ambiente Nacional";
+            default -> codigo;
+        };
+    }
+
+    private static String tipoAmbiente(String codigo) {
+        if (codigo == null) {
+            return null;
+        }
+        return switch (codigo) {
+            case "1" -> "Produção";
+            case "2" -> "Produção Restrita";
+            default -> codigo;
+        };
+    }
 
     private static String simplesNacional(String codigo) {
         if (codigo == null) {
             return null;
         }
         return switch (codigo) {
-            case "1" -> "Nao Optante";
+            case "1" -> "Não Optante";
             case "2" -> "Optante - Microempreendedor Individual (MEI)";
             case "3" -> "Optante - Microempresa ou Empresa de Pequeno Porte (ME/EPP)";
             default -> codigo;
@@ -224,9 +451,52 @@ public final class NfseXmlReader {
             return null;
         }
         return switch (codigo) {
-            case "1" -> "Regime de apuracao dos tributos federais e municipal pelo SN";
-            case "2" -> "Regime de apuracao dos tributos federais pelo SN e ISSQN por fora do SN";
+            case "1" -> "Regime de apuração dos tributos federais e municipal pelo SN";
+            case "2" -> "Regime de apuração dos tributos federais pelo SN e ISSQN por fora do SN";
             case "3" -> "Tributos federais e ISSQN por fora do SN";
+            default -> codigo;
+        };
+    }
+
+    private static String regimeEspecial(String codigo) {
+        if (codigo == null) {
+            return null;
+        }
+        return switch (codigo) {
+            case "0" -> "Nenhum";
+            case "1" -> "Ato Cooperado (Cooperativa)";
+            case "2" -> "Estimativa";
+            case "3" -> "Microempresa Municipal";
+            case "4" -> "Notário ou Registrador";
+            case "5" -> "Profissional Autônomo";
+            case "6" -> "Sociedade de Profissionais";
+            case "9" -> "Outros";
+            default -> codigo;
+        };
+    }
+
+    private static String tipoImunidade(String codigo) {
+        if (codigo == null) {
+            return null;
+        }
+        return switch (codigo) {
+            case "1" -> "Patrimônio, renda ou serviços, uns dos outros";
+            case "2" -> "Templos de qualquer culto";
+            case "3" -> "Patrimônio, renda ou serviços dos partidos políticos, entidades sindicais e "
+                + "instituições de educação e assistência social, sem fins lucrativos";
+            case "4" -> "Livros, jornais, periódicos e o papel destinado a sua impressão";
+            case "5" -> "Fonogramas e videofonogramas musicais produzidos no Brasil";
+            default -> codigo;
+        };
+    }
+
+    private static String suspensao(String codigo) {
+        if (codigo == null) {
+            return null;
+        }
+        return switch (codigo) {
+            case "1" -> "Exigibilidade Suspensa por Decisão Judicial";
+            case "2" -> "Exigibilidade Suspensa por Processo Administrativo";
             default -> codigo;
         };
     }
@@ -236,10 +506,10 @@ public final class NfseXmlReader {
             return null;
         }
         return switch (codigo) {
-            case "1" -> "Operacao Tributavel";
+            case "1" -> "Operação Tributável";
             case "2" -> "Imunidade";
-            case "3" -> "Exportacao de servico";
-            case "4" -> "Nao Incidencia";
+            case "3" -> "Exportação de serviço";
+            case "4" -> "Não Incidência";
             default -> codigo;
         };
     }
@@ -249,14 +519,33 @@ public final class NfseXmlReader {
             return null;
         }
         return switch (codigo) {
-            case "1" -> "Nao Retido";
+            case "1" -> "Não Retido";
             case "2" -> "Retido pelo Tomador";
-            case "3" -> "Retido pelo Intermediario";
+            case "3" -> "Retido pelo Intermediário";
             default -> codigo;
         };
     }
 
-    // ---- helpers DOM (mesma tecnica do DpsXmlReader) ----
+    private static String retencaoPisCofins(String codigo) {
+        if (codigo == null) {
+            return null;
+        }
+        return switch (codigo) {
+            case "0" -> "PIS/COFINS/CSLL Não Retidos";
+            case "1" -> "PIS/COFINS Retidos";
+            case "2" -> "PIS/COFINS Não Retidos";
+            case "3" -> "PIS/COFINS/CSLL Retidos";
+            case "4" -> "PIS/COFINS Retidos, CSLL Não Retido";
+            case "5" -> "PIS Retido, COFINS/CSLL Não Retido";
+            case "6" -> "COFINS Retido, PIS/CSLL Não Retido";
+            case "7" -> "PIS Não Retido, COFINS/CSLL Retidos";
+            case "8" -> "PIS/COFINS Não Retidos, CSLL Retido";
+            case "9" -> "COFINS Não Retido, PIS/CSLL Retidos";
+            default -> codigo;
+        };
+    }
+
+    // ---- helpers DOM ----
 
     private static Document parse(String xml) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -268,6 +557,48 @@ public final class NfseXmlReader {
         return factory.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
     }
 
+    /** Filho DIRETO por local name (sem descer na arvore) — seguro para nomes repetidos em niveis. */
+    private static Element child(Element scope, String localName) {
+        if (scope == null) {
+            return null;
+        }
+        NodeList children = scope.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            if (children.item(i) instanceof Element element && localName.equals(localName(element))) {
+                return element;
+            }
+        }
+        return null;
+    }
+
+    /** Texto de um filho DIRETO. */
+    private static String childText(Element scope, String localName) {
+        return textOf(child(scope, localName));
+    }
+
+    /** Texto de todos os filhos diretos com o localName informado (ex.: xItemPed, ate 99x). */
+    private static List<String> childTexts(Element scope, String localName) {
+        List<String> valores = new ArrayList<>();
+        if (scope == null) {
+            return valores;
+        }
+        NodeList children = scope.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            if (children.item(i) instanceof Element element && localName.equals(localName(element))) {
+                String texto = textOf(element);
+                if (texto != null && !texto.isBlank()) {
+                    valores.add(texto.trim());
+                }
+            }
+        }
+        return valores;
+    }
+
+    private static String juntarVirgula(List<String> valores) {
+        return valores.isEmpty() ? null : String.join(", ", valores);
+    }
+
+    /** Primeiro descendente por local name (depth-first). Usar apenas em escopos sem ambiguidade. */
     private static Element firstByLocalName(Element scope, String localName) {
         if (scope == null) {
             return null;
@@ -288,8 +619,12 @@ public final class NfseXmlReader {
         return null;
     }
 
+    /** Texto do primeiro descendente. Usar apenas em escopos pequenos e sem ambiguidade. */
     private static String text(Element scope, String localName) {
-        Element element = firstByLocalName(scope, localName);
+        return textOf(firstByLocalName(scope, localName));
+    }
+
+    private static String textOf(Element element) {
         if (element == null) {
             return null;
         }
@@ -301,8 +636,27 @@ public final class NfseXmlReader {
         return element.getLocalName() != null ? element.getLocalName() : element.getTagName();
     }
 
+    private static Element primeiroNaoNulo(Element a, Element b) {
+        return a != null ? a : b;
+    }
+
     private static String primeiroNaoVazio(String a, String b) {
         return a != null && !a.isBlank() ? a : b;
+    }
+
+    private static BigDecimal primeiroDecimal(String a, String b) {
+        return a != null ? decimalOrNull(a) : decimalOrNull(b);
+    }
+
+    /** Soma ignorando nulls; retorna null se TODAS as parcelas forem null (campo ausente -> "-"). */
+    private static BigDecimal somaOuNull(BigDecimal... parcelas) {
+        BigDecimal soma = null;
+        for (BigDecimal parcela : parcelas) {
+            if (parcela != null) {
+                soma = soma == null ? parcela : soma.add(parcela);
+            }
+        }
+        return soma;
     }
 
     private static BigDecimal decimalOrNull(String value) {

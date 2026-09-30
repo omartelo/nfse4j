@@ -26,8 +26,26 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   `gradle/libs.versions.toml`). Fat jars em `nfse4j-{cli,mcp}/build/libs/`; publicação no Central via
   `./gradlew publishToMavenCentral`.
 
+- **DANFSe reescrito no modelo do Anexo I da NT 008/2026 v1.02** ("DANFSe v2.0"). O `nfse4j-danfse`
+  passa a ser o código do [xml-danfse-br](https://github.com/rzmt/xml-danfse-br) 0.9.0 (que tinha
+  sido extraído deste módulo na 0.4.5) com as correções de conformidade do PR #2 do xml-danfse-br.
+  Conformidade item a item em `docs/nt008-checklist.md`. Principais ganhos:
+  - Campos antes fixos passam a ser lidos do XML: intermediário, regime especial, tributação federal
+    (IRRF, contribuição previdenciária, CSLL, PIS/COFINS) e totais da Lei 12.741/2012.
+  - Novos blocos e campos: destinatário (NT 009), NIF e endereço no exterior, imunidade, suspensão,
+    benefício municipal, deduções, BC/alíquota/ISSQN apurado, informações complementares unificadas.
+  - Leitor do XML navega por filho direto, sem confundir `valores`/`IBSCBS` do `infNFSe` e do `infDPS`.
+  - Fonte Liberation Sans embutida, QR Code de 1,52 cm e margens conforme a NT.
+  - `DanfseGenerator.gerarPdf(xml)` infere o ambiente pelo `tpAmb`.
+  - Testes golden (comparação visual do PDF) e de geometria; `-Dgolden.update=true` regenera.
+
+  Mudanças incompatíveis no `nfse4j-danfse`: os records de `Danfse` foram reestruturados nos blocos da
+  NT (`DanfseGenerator` e `DanfseConfig` mantêm as assinaturas); descrições de código passam a ser as
+  do leiaute, acentuadas; a propriedade `nfse.danfse.ibge` vira `nfse4j.danfse.ibge`; o módulo deixa de
+  depender do `nfse4j-core`, que não usava.
+
 ### Removido
-- **Download do DANFSe pela API oficial (ADN)**, desligada em 2026-07-01: `DanfseService`,
+- **Download do DANFSe pela API oficial (ADN)**, desligada pela NT 008/2026: `DanfseService`,
   `DanfseClient`, `Nfse.danfse()`, `NfseRunner.baixarPdf`/`PdfResult`, `NfseBinaryResponse`,
   `NfseHttpClient.getBytes`, `EndpointResolver.danfse()`/`withEndpoints(...)`, o comando `pdf` do
   CLI e a ferramenta `baixar_danfse` do MCP. Use a geração local (`nfse4j-danfse`, `danfse --xml`

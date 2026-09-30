@@ -7,7 +7,7 @@
     <cLocIncid>3550308</cLocIncid>
     <xLocIncid>Sao Paulo</xLocIncid>
     <xTribNac>Servico de teste com reforma tributaria.</xTribNac>
-    <verAplic>nfse4j</verAplic>
+    <verAplic>nfse-java-mcp</verAplic>
     <ambGer>2</ambGer>
     <tpEmis>1</tpEmis>
     <procEmi>2</procEmi>
@@ -47,7 +47,7 @@
       <infDPS Id="DPS3550308212345678000199009000000000009999">
         <tpAmb>2</tpAmb>
         <dhEmi>2026-06-23T15:59:00-03:00</dhEmi>
-        <verAplic>nfse4j</verAplic>
+        <verAplic>nfse-java-mcp</verAplic>
         <serie>00900</serie>
         <nDPS>9999</nDPS>
         <dCompet>2026-06-23</dCompet>
