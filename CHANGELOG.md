@@ -17,6 +17,11 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   `vTotTrib` e `pTotTrib` do XML de exemplo, e o `<trib>` saía sem `totTrib`, obrigatório no XSD da
   DPS v1.01, então a SEFIN recusaria a nota. O `Dps.Tributacao` passa a modelar os dois grupos
   (federal, estadual e municipal) e eles são lidos e gerados na ordem do XSD.
+- **`Dps.Tributacao` aceitava mais de um grupo em `totTrib`.** O XSD da DPS permite um só
+  (`vTotTrib`, `pTotTrib`, `indTotTrib` ou `pTotTribSN`). Agora o construtor lança
+  `IllegalArgumentException` dizendo quais campos vieram juntos. Na emissão, informar
+  `indicadorTotalTributos` junto com `percentualTotalTributosSimplesNacional` passa a falhar assim, em
+  vez de gerar um XML que a SEFIN recusaria.
 
 ### Alterado
 - O workflow de release passa a publicar o `nfse4j-core` e o `nfse4j-danfse` no Maven Central ao
