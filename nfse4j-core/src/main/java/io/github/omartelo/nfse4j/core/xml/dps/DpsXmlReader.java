@@ -24,12 +24,13 @@ import org.w3c.dom.NodeList;
 public final class DpsXmlReader {
 
     /**
-     * Grupos do infDPS (XSD DPS v1.01) que o modelo {@link Dps} nao representa. Ler um exemplo com eles
-     * descartaria os dados em silencio e a nota reemitida sairia diferente da original.
+     * Grupos e campos do infDPS (XSD DPS v1.01) que o modelo {@link Dps} nao representa. Ler um exemplo com
+     * eles descartaria os dados em silencio e a nota reemitida sairia diferente da original.
      */
     private static final List<String> GRUPOS_NAO_SUPORTADOS = List.of(
         "cMotivoEmisTI", "chNFSeRej", "subst", "interm", "IBSCBS",
-        "cPaisPrestacao", "cIntContrib", "comExt", "obra", "atvEvento", "infoCompl"
+        "cPaisPrestacao", "cIntContrib", "comExt", "obra", "atvEvento",
+        "infoCompl/idDocTec", "infoCompl/docRef", "infoCompl/xPed", "infoCompl/gItemPed"
     );
 
     private DpsXmlReader() {
@@ -148,12 +149,14 @@ public final class DpsXmlReader {
         if (serv == null) {
             return null;
         }
+        String informacoesComplementares = text(serv, "xInfComp");
         return new Dps.Servico(
             text(serv, "cLocPrestacao"),
             text(serv, "cTribNac"),
             text(serv, "cTribMun"),
             text(serv, "xDescServ"),
-            text(serv, "cNBS")
+            text(serv, "cNBS"),
+            informacoesComplementares == null ? null : new Dps.InformacoesComplementares(informacoesComplementares)
         );
     }
 

@@ -177,7 +177,12 @@ class DpsReemissaoTest {
             Arguments.of("obra", "</cServ>", "</cServ><obra><cObra>123456</cObra></obra>"),
             Arguments.of("atvEvento", "</cServ>",
                 "</cServ><atvEvento><xNome>Evento</xNome><dtIni>2026-01-10</dtIni><dtFim>2026-01-11</dtFim></atvEvento>"),
-            Arguments.of("infoCompl", "</cServ>", "</cServ><infoCompl><xInfComp>Observacao</xInfComp></infoCompl>")
+            Arguments.of("infoCompl/idDocTec", "</cServ>", "</cServ><infoCompl><idDocTec>ART-1</idDocTec></infoCompl>"),
+            Arguments.of("infoCompl/docRef", "</cServ>", "</cServ><infoCompl><docRef>CONTRATO-1</docRef></infoCompl>"),
+            Arguments.of("infoCompl/xPed", "</cServ>",
+                "</cServ><infoCompl><xPed>PED-1</xPed><xInfComp>Observacao</xInfComp></infoCompl>"),
+            Arguments.of("infoCompl/gItemPed", "</cServ>",
+                "</cServ><infoCompl><gItemPed><xItemPed>7</xItemPed></gItemPed></infoCompl>")
         );
     }
 

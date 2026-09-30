@@ -6,6 +6,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 public record Dps(String versao, InfDps infDps) {
 
@@ -185,10 +186,50 @@ public record Dps(String versao, InfDps infDps) {
         String codigoTributacaoNacional,
         String codigoTributacaoMunicipal,
         String descricao,
-        String codigoNbs
+        String codigoNbs,
+        InformacoesComplementares informacoesComplementares
     ) {
+        public Servico(
+            String codigoLocalPrestacao,
+            String codigoTributacaoNacional,
+            String codigoTributacaoMunicipal,
+            String descricao,
+            String codigoNbs
+        ) {
+            this(codigoLocalPrestacao, codigoTributacaoNacional, codigoTributacaoMunicipal, descricao, codigoNbs, null);
+        }
+
         public Servico(String codigoLocalPrestacao, String codigoTributacaoNacional, String descricao) {
             this(codigoLocalPrestacao, codigoTributacaoNacional, null, descricao, null);
+        }
+    }
+
+    /**
+     * infoCompl: por ora so o xInfComp, texto livre que o DANFSe mostra em "Informacoes complementares".
+     * Dominio do TSDescInfCompl (XSD DPS v1.01): 1 a 2000 caracteres no padrao do TSString, isto e, so
+     * de U+0020 a U+00FF, sem quebra de linha e sem espaco no inicio ou no fim.
+     *
+     * @throws IllegalArgumentException se o texto sair do dominio do XSD
+     */
+    public record InformacoesComplementares(String texto) {
+        private static final int TEXTO_MAX = 2000;
+        // Pattern do TSString em tiposSimples_v1.01.xsd, com o [!-ÿ] do XSD escrito como U+0021-U+00FF.
+        private static final Pattern TEXTO_PERMITIDO =
+            Pattern.compile("[!-\\u00FF][ -\\u00FF]*[!-\\u00FF]|[!-\\u00FF]");
+
+        public InformacoesComplementares {
+            if (texto == null || texto.isBlank()) {
+                throw new IllegalArgumentException(
+                    "texto das informacoes complementares nao pode ficar em branco; omita o grupo se nao houver texto.");
+            }
+            if (texto.length() > TEXTO_MAX) {
+                throw new IllegalArgumentException("texto das informacoes complementares deve ter ate "
+                    + TEXTO_MAX + " caracteres (recebido: " + texto.length() + ").");
+            }
+            if (!TEXTO_PERMITIDO.matcher(texto).matches()) {
+                throw new IllegalArgumentException("texto das informacoes complementares aceita so caracteres de "
+                    + "U+0020 a U+00FF (Latin-1), sem quebra de linha e sem espaco no inicio ou no fim.");
+            }
         }
     }
 
