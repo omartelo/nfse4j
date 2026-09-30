@@ -208,7 +208,7 @@ public final class NfseMcpServer {
                 Map<String, Object> a = req.arguments();
                 return ok(NfseRunner.manifestar(
                     exigirTexto(a, "chaveAcesso"), texto(a, "autorCpfCnpj"),
-                    TipoManifestacao.valueOf(exigirTexto(a, "tipo")),
+                    TipoManifestacao.porNome(exigirTexto(a, "tipo")),
                     texto(a, "codigoMotivo"), texto(a, "descricaoMotivo"),
                     ambiente(a), certificado(a), confirmar(a)));
             }));

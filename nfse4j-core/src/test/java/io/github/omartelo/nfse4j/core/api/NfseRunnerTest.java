@@ -85,6 +85,27 @@ class NfseRunnerTest {
     }
 
     @Test
+    void travaDeProducaoNomeiaAOperacao(@TempDir Path dir) throws Exception {
+        CertificadoA1 cert = certValido(dir);
+
+        assertTrue(assertThrows(IllegalStateException.class,
+            () -> NfseRunner.emitir(request(), Ambiente.PRODUCAO, cert, false))
+            .getMessage().startsWith("Emissao em PRODUCAO"));
+        assertTrue(assertThrows(IllegalStateException.class,
+            () -> NfseRunner.cancelar(CHAVE_ACESSO, null, 1, "1", "Erro na emissao da nota",
+                Ambiente.PRODUCAO, cert, false))
+            .getMessage().startsWith("Cancelamento em PRODUCAO"));
+        assertTrue(assertThrows(IllegalStateException.class,
+            () -> NfseRunner.solicitarAnaliseFiscalCancelamento(CHAVE_ACESSO, null, "1",
+                "Erro na emissao da nota", Ambiente.PRODUCAO, cert, false))
+            .getMessage().startsWith("Solicitacao de analise fiscal de cancelamento em PRODUCAO"));
+        assertTrue(assertThrows(IllegalStateException.class,
+            () -> NfseRunner.manifestar(CHAVE_ACESSO, null, TipoManifestacao.REJEICAO_TOMADOR, "1", null,
+                Ambiente.PRODUCAO, cert, false))
+            .getMessage().startsWith("Manifestacao em PRODUCAO"));
+    }
+
+    @Test
     void manifestarComCertificadoExpiradoFalha(@TempDir Path dir) throws Exception {
         Path p = dir.resolve("expirado.p12");
         TestPkcs12Factory.createExpired(p, SENHA, "1", CNPJ);

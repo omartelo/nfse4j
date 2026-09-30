@@ -16,7 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -147,7 +146,7 @@ public final class Cli {
         var result = NfseRunner.manifestar(
             a.required("chave"),
             a.get("autor"),
-            TipoManifestacao.valueOf(a.required("tipo").toUpperCase(Locale.ROOT).replace('-', '_')),
+            TipoManifestacao.porNome(a.required("tipo")),
             a.get("motivo-codigo"),
             a.get("motivo-descricao"),
             a.ambiente(),

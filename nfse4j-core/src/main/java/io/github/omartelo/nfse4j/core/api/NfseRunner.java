@@ -39,6 +39,7 @@ public final class NfseRunner {
     private static final int TAMANHO_RAIZ_CNPJ = 8;
 
     private static final String VERSAO_APLICATIVO = "nfse4j";
+    private static final String AVISO_EMISSAO_PRODUCAO = "Emissao em PRODUCAO cria documento fiscal REAL.";
 
     private NfseRunner() {
     }
@@ -80,7 +81,7 @@ public final class NfseRunner {
 
     public static EmissaoResult emitir(EmitirNfseRequest request, Ambiente ambiente,
                                        CertificadoA1 cert, boolean confirmarProducao) {
-        exigirConfirmacaoProducao(ambiente, confirmarProducao);
+        exigirConfirmacaoProducao(ambiente, confirmarProducao, AVISO_EMISSAO_PRODUCAO);
         validarCertificado(cert);
         // Quando o prestador nao informa documento, herdamos o do certificado — que precisa existir.
         String cpfCnpjPrestador = cert.cpfCnpj().orElseThrow(() -> new IllegalStateException(
@@ -91,7 +92,7 @@ public final class NfseRunner {
 
     public static EmissaoResult emitirDeExemplo(String xmlExemplo, DpsReemissao.Overrides overrides,
                                                 Ambiente ambiente, CertificadoA1 cert, boolean confirmarProducao) {
-        exigirConfirmacaoProducao(ambiente, confirmarProducao);
+        exigirConfirmacaoProducao(ambiente, confirmarProducao, AVISO_EMISSAO_PRODUCAO);
         validarCertificado(cert);
         Dps exemplo = DpsXmlReader.read(xmlExemplo);
         Dps dps = DpsReemissao.reemitir(exemplo, overrides);
@@ -122,34 +123,38 @@ public final class NfseRunner {
     public static RespostaSimples cancelar(String chaveAcesso, String cpfCnpjAutor, int numeroPedido,
                                            String codigoMotivo, String descricaoMotivo,
                                            Ambiente ambiente, CertificadoA1 cert, boolean confirmarProducao) {
-        String autor = (cpfCnpjAutor == null || cpfCnpjAutor.isBlank()) ? cert.cpfCnpj().orElse(null) : cpfCnpjAutor;
         CancelamentoNfse cancelamento = new CancelamentoNfse(
-            chaveAcesso, autor, OffsetDateTime.now(), numeroPedido, codigoMotivo, descricaoMotivo, VERSAO_APLICATIVO);
-        return registrarEvento(cancelamento, ambiente, cert, confirmarProducao);
+            chaveAcesso, autorOuTitular(cpfCnpjAutor, cert), OffsetDateTime.now(),
+            numeroPedido, codigoMotivo, descricaoMotivo, VERSAO_APLICATIVO);
+        return registrarEvento(cancelamento, "Cancelamento em PRODUCAO cancela uma NFS-e REAL.", ambiente, cert,
+            confirmarProducao);
     }
 
     public static RespostaSimples solicitarAnaliseFiscalCancelamento(String chaveAcesso, String cpfCnpjAutor,
                                                                      String codigoMotivo, String descricaoMotivo,
                                                                      Ambiente ambiente, CertificadoA1 cert,
                                                                      boolean confirmarProducao) {
-        String autor = (cpfCnpjAutor == null || cpfCnpjAutor.isBlank()) ? cert.cpfCnpj().orElse(null) : cpfCnpjAutor;
         SolicitacaoAnaliseFiscalCancelamentoNfse solicitacao = new SolicitacaoAnaliseFiscalCancelamentoNfse(
-            chaveAcesso, autor, OffsetDateTime.now(), codigoMotivo, descricaoMotivo, VERSAO_APLICATIVO);
-        return registrarEvento(solicitacao, ambiente, cert, confirmarProducao);
+            chaveAcesso, autorOuTitular(cpfCnpjAutor, cert), OffsetDateTime.now(),
+            codigoMotivo, descricaoMotivo, VERSAO_APLICATIVO);
+        return registrarEvento(solicitacao,
+            "Solicitacao de analise fiscal de cancelamento em PRODUCAO vale para uma NFS-e REAL.", ambiente, cert,
+            confirmarProducao);
     }
 
     public static RespostaSimples manifestar(String chaveAcesso, String cpfCnpjAutor, TipoManifestacao tipo,
                                              String codigoMotivo, String descricaoMotivo,
                                              Ambiente ambiente, CertificadoA1 cert, boolean confirmarProducao) {
-        String autor = (cpfCnpjAutor == null || cpfCnpjAutor.isBlank()) ? cert.cpfCnpj().orElse(null) : cpfCnpjAutor;
         ManifestacaoNfse manifestacao = new ManifestacaoNfse(
-            chaveAcesso, autor, OffsetDateTime.now(), tipo, codigoMotivo, descricaoMotivo, VERSAO_APLICATIVO);
-        return registrarEvento(manifestacao, ambiente, cert, confirmarProducao);
+            chaveAcesso, autorOuTitular(cpfCnpjAutor, cert), OffsetDateTime.now(),
+            tipo, codigoMotivo, descricaoMotivo, VERSAO_APLICATIVO);
+        return registrarEvento(manifestacao, "Manifestacao em PRODUCAO fica registrada numa NFS-e REAL.", ambiente, cert,
+            confirmarProducao);
     }
 
-    private static RespostaSimples registrarEvento(PedidoRegistroEvento evento, Ambiente ambiente,
+    private static RespostaSimples registrarEvento(PedidoRegistroEvento evento, String avisoProducao, Ambiente ambiente,
                                                    CertificadoA1 cert, boolean confirmarProducao) {
-        exigirConfirmacaoProducao(ambiente, confirmarProducao);
+        exigirConfirmacaoProducao(ambiente, confirmarProducao, avisoProducao);
         validarCertificado(cert);
         NfseHttpResponse response = nfse(ambiente, cert).contribuinte().registrarEvento(evento);
         return new RespostaSimples(response.statusCode(), response.isSuccessful(), ambienteLabel(ambiente), response.body());
@@ -252,10 +257,14 @@ public final class NfseRunner {
         }
     }
 
-    private static void exigirConfirmacaoProducao(Ambiente ambiente, boolean confirmarProducao) {
+    private static String autorOuTitular(String cpfCnpjAutor, CertificadoA1 cert) {
+        return (cpfCnpjAutor == null || cpfCnpjAutor.isBlank()) ? cert.cpfCnpj().orElse(null) : cpfCnpjAutor;
+    }
+
+    private static void exigirConfirmacaoProducao(Ambiente ambiente, boolean confirmarProducao, String avisoProducao) {
         if (ambiente == Ambiente.PRODUCAO && !confirmarProducao) {
             throw new IllegalStateException(
-                "Emissao em PRODUCAO cria documento fiscal REAL. Confirme explicitamente "
+                avisoProducao + " Confirme explicitamente "
                     + "(CLI: --confirmar-producao; MCP: confirmarProducao=true).");
         }
     }
