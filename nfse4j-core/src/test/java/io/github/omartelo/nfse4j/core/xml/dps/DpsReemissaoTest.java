@@ -9,7 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class DpsReemissaoTest {
 
@@ -131,5 +135,66 @@ class DpsReemissaoTest {
 
         assertTrue(xml.contains("<totTrib><pTotTrib><pTotTribFed>13.25</pTotTribFed>"
             + "<pTotTribEst>0.00</pTotTribEst><pTotTribMun>1.92</pTotTribMun></pTotTrib></totTrib>"), xml);
+    }
+
+    private static final String TRIBUTACAO_MINIMA = "<trib><tribMun><tribISSQN>1</tribISSQN><tpRetISSQN>1</tpRetISSQN></tribMun>"
+        + "<totTrib><indTotTrib>0</indTotTrib></totTrib></trib>";
+
+    private static String exemploComValores(String conteudoValores) {
+        return """
+            <NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01"><infNFSe Id="NFS1">
+              <DPS versao="1.01"><infDPS Id="DPS1">
+                <tpAmb>2</tpAmb><dhEmi>2026-01-15T10:00:00-03:00</dhEmi><verAplic>EmissorWeb</verAplic>
+                <serie>00900</serie><nDPS>10</nDPS><dCompet>2026-01-15</dCompet><tpEmit>1</tpEmit>
+                <cLocEmi>3550308</cLocEmi>
+                <prest><CNPJ>12345678000199</CNPJ><regTrib><opSimpNac>1</opSimpNac><regEspTrib>0</regEspTrib></regTrib></prest>
+                <toma><CPF>11122233344</CPF><xNome>Tomador</xNome></toma>
+                <serv><locPrest><cLocPrestacao>3550308</cLocPrestacao></locPrest>
+                  <cServ><cTribNac>010101</cTribNac><xDescServ>Servico</xDescServ></cServ></serv>
+                <valores>%s</valores>
+              </infDPS></DPS>
+            </infNFSe></NFSe>
+            """.formatted(conteudoValores);
+    }
+
+    private static String exemploMinimo() {
+        return exemploComValores("<vServPrest><vServ>250.00</vServ></vServPrest>" + TRIBUTACAO_MINIMA);
+    }
+
+    static Stream<Arguments> gruposNaoSuportados() {
+        return Stream.of(
+            Arguments.of("cMotivoEmisTI", "<cLocEmi>", "<cMotivoEmisTI>4</cMotivoEmisTI><cLocEmi>"),
+            Arguments.of("chNFSeRej", "<cLocEmi>", "<chNFSeRej>" + "1".repeat(50) + "</chNFSeRej><cLocEmi>"),
+            Arguments.of("subst", "<prest>",
+                "<subst><chSubstda>" + "1".repeat(50) + "</chSubstda><cMotivo>01</cMotivo></subst><prest>"),
+            Arguments.of("interm", "<serv>", "<interm><CPF>99988877766</CPF><xNome>Intermediario</xNome></interm><serv>"),
+            Arguments.of("IBSCBS", "</infDPS>", "<IBSCBS><finNFSe>0</finNFSe><indFinal>0</indFinal></IBSCBS></infDPS>"),
+            Arguments.of("cPaisPrestacao", "<cLocPrestacao>3550308</cLocPrestacao>", "<cPaisPrestacao>US</cPaisPrestacao>"),
+            Arguments.of("cIntContrib", "</xDescServ>", "</xDescServ><cIntContrib>SERV-01</cIntContrib>"),
+            Arguments.of("comExt", "</cServ>", "</cServ><comExt><mdPrestacao>1</mdPrestacao><tpMoeda>220</tpMoeda></comExt>"),
+            Arguments.of("obra", "</cServ>", "</cServ><obra><cObra>123456</cObra></obra>"),
+            Arguments.of("atvEvento", "</cServ>",
+                "</cServ><atvEvento><xNome>Evento</xNome><dtIni>2026-01-10</dtIni><dtFim>2026-01-11</dtFim></atvEvento>"),
+            Arguments.of("infoCompl", "</cServ>", "</cServ><infoCompl><xInfComp>Observacao</xInfComp></infoCompl>"),
+            Arguments.of("vDedRed/documentos", "</vServPrest>",
+                "</vServPrest><vDedRed><documentos><docDedRed><nDoc>1</nDoc><tpDedRed>1</tpDedRed>"
+                    + "<dtEmiDoc>2026-01-10</dtEmiDoc><vDedutivelRedutivel>50.00</vDedutivelRedutivel>"
+                    + "<vDeducaoReducao>50.00</vDeducaoReducao></docDedRed></documentos></vDedRed>")
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("gruposNaoSuportados")
+    void exemploComGrupoNaoSuportadoFalhaNaLeituraNomeandoOGrupo(String grupo, String ancora, String substituto) {
+        String xml = exemploMinimo().replace(ancora, substituto);
+
+        DpsXmlException erro = assertThrows(DpsXmlException.class, () -> DpsXmlReader.read(xml));
+
+        assertTrue(erro.getMessage().contains(grupo), erro.getMessage());
+    }
+
+    @Test
+    void exemploSemGrupoNaoSuportadoContinuaSendoLido() {
+        assertEquals("Servico", DpsXmlReader.read(exemploMinimo()).infDps().servico().descricao());
     }
 }
