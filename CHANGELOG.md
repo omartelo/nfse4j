@@ -6,6 +6,9 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 ## [Não lançado]
 
 ### Adicionado
+- **Eventos de uma NFS-e pela chave de acesso** (distribuição de DF-e do ADN) na CLI e no MCP:
+  `NfseRunner.consultarEventosDfe`, ferramenta `consultar_eventos_dfe` e comando
+  `consultar-eventos-dfe`. Devolvem só o resumo; o XML de cada evento sai por `consultar_dfe` pelo NSU.
 - **Validação contra o XSD oficial antes do envio.** A DPS (em `emitir`, `emitirDetalhado` e
   `emitirXml`) e os pedidos de registro de evento (cancelamento, análise fiscal e manifestação) são
   validados contra os XSDs da NFS-e Nacional v1.01, já assinados, antes de ir para a SEFIN. Violação
