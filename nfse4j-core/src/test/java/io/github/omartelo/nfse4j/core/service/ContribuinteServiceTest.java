@@ -13,6 +13,8 @@ import io.github.omartelo.nfse4j.core.xml.dps.DpsIdGenerator;
 import io.github.omartelo.nfse4j.core.xml.dps.DpsXmlBuilder;
 import io.github.omartelo.nfse4j.core.xml.dps.DpsXmlReader;
 import io.github.omartelo.nfse4j.core.xml.evento.CancelamentoNfse;
+import io.github.omartelo.nfse4j.core.xml.evento.ManifestacaoNfse;
+import io.github.omartelo.nfse4j.core.xml.evento.TipoManifestacao;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.ByteArrayInputStream;
@@ -201,6 +203,47 @@ class ContribuinteServiceTest {
 
         assertTrue(exception.getMessage().contains("chNFSe"), exception.getMessage());
         assertFalse(enviou.get());
+    }
+
+    @Test
+    void shouldBuildSignAndPostManifestacaoEvent() throws Exception {
+        String chave = "31298062112223330001810000000000000012345678901234";
+        CertificadoA1 certificado = certificado();
+        startServer(exchange -> {
+            assertEquals("/SefinNacional/nfse/" + chave + "/eventos", exchange.getRequestURI().getPath());
+
+            String payload = extractJsonValue(requestBody(exchange), "pedidoRegistroEventoXmlGZipB64");
+            String signedXml = XmlPayloadCodec.ungzipBase64(payload);
+            assertTrue(signedXml.contains("<infPedReg Id=\"PRE" + chave + "203206\">"));
+            assertTrue(signedXml.contains("<tpAmb>2</tpAmb>"));
+            assertTrue(signedXml.contains("<e203206><xDesc>Manifestação de NFS-e - Rejeição do Tomador</xDesc>"
+                + "<cMotivo>1</cMotivo></e203206>"));
+            assertValidSignature(signedXml, "infPedReg", certificado);
+            respond(exchange, 200, "{\"evento\":\"ok\"}");
+        });
+
+        ContribuinteService service = new ContribuinteService(context(certificado));
+
+        NfseHttpResponse response = service.registrarEvento(new ManifestacaoNfse(
+            chave, "12345678000195", OffsetDateTime.now(), TipoManifestacao.REJEICAO_TOMADOR, "1", null, "nfse4j"));
+
+        assertEquals(200, response.statusCode());
+    }
+
+    @Test
+    void shouldRequireCertificateWhenRegisteringEvent() {
+        ContribuinteService service = new ContribuinteService(NfseContext.builder()
+            .ambiente(Ambiente.HOMOLOGACAO)
+            .build());
+
+        ContribuinteServiceException exception = assertThrows(
+            ContribuinteServiceException.class,
+            () -> service.registrarEvento(new ManifestacaoNfse(
+                "31298062112223330001810000000000000012345678901234", "12345678000195", OffsetDateTime.now(),
+                TipoManifestacao.CONFIRMACAO_PRESTADOR, null, null, "nfse4j"))
+        );
+
+        assertEquals("Certificado A1 e obrigatorio para registrar evento de NFS-e.", exception.getMessage());
     }
 
     private CertificadoA1 certificado() throws Exception {

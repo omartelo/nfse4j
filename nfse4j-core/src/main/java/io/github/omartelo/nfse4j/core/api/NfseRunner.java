@@ -16,6 +16,10 @@ import io.github.omartelo.nfse4j.core.xml.dps.Dps;
 import io.github.omartelo.nfse4j.core.xml.dps.DpsReemissao;
 import io.github.omartelo.nfse4j.core.xml.dps.DpsXmlReader;
 import io.github.omartelo.nfse4j.core.xml.evento.CancelamentoNfse;
+import io.github.omartelo.nfse4j.core.xml.evento.ManifestacaoNfse;
+import io.github.omartelo.nfse4j.core.xml.evento.PedidoRegistroEvento;
+import io.github.omartelo.nfse4j.core.xml.evento.SolicitacaoAnaliseFiscalCancelamentoNfse;
+import io.github.omartelo.nfse4j.core.xml.evento.TipoManifestacao;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -33,6 +37,8 @@ public final class NfseRunner {
     // a partir do ultimoNsu devolvido; o limite tambem segura o tamanho da resposta para o agente.
     private static final int MAX_LOTES_DFE = 10;
     private static final int TAMANHO_RAIZ_CNPJ = 8;
+
+    private static final String VERSAO_APLICATIVO = "nfse4j";
 
     private NfseRunner() {
     }
@@ -116,12 +122,36 @@ public final class NfseRunner {
     public static RespostaSimples cancelar(String chaveAcesso, String cpfCnpjAutor, int numeroPedido,
                                            String codigoMotivo, String descricaoMotivo,
                                            Ambiente ambiente, CertificadoA1 cert, boolean confirmarProducao) {
-        exigirConfirmacaoProducao(ambiente, confirmarProducao);
-        validarCertificado(cert);
         String autor = (cpfCnpjAutor == null || cpfCnpjAutor.isBlank()) ? cert.cpfCnpj().orElse(null) : cpfCnpjAutor;
         CancelamentoNfse cancelamento = new CancelamentoNfse(
-            chaveAcesso, autor, OffsetDateTime.now(), numeroPedido, codigoMotivo, descricaoMotivo, "nfse4j");
-        NfseHttpResponse response = nfse(ambiente, cert).contribuinte().cancelar(cancelamento);
+            chaveAcesso, autor, OffsetDateTime.now(), numeroPedido, codigoMotivo, descricaoMotivo, VERSAO_APLICATIVO);
+        return registrarEvento(cancelamento, ambiente, cert, confirmarProducao);
+    }
+
+    public static RespostaSimples solicitarAnaliseFiscalCancelamento(String chaveAcesso, String cpfCnpjAutor,
+                                                                     String codigoMotivo, String descricaoMotivo,
+                                                                     Ambiente ambiente, CertificadoA1 cert,
+                                                                     boolean confirmarProducao) {
+        String autor = (cpfCnpjAutor == null || cpfCnpjAutor.isBlank()) ? cert.cpfCnpj().orElse(null) : cpfCnpjAutor;
+        SolicitacaoAnaliseFiscalCancelamentoNfse solicitacao = new SolicitacaoAnaliseFiscalCancelamentoNfse(
+            chaveAcesso, autor, OffsetDateTime.now(), codigoMotivo, descricaoMotivo, VERSAO_APLICATIVO);
+        return registrarEvento(solicitacao, ambiente, cert, confirmarProducao);
+    }
+
+    public static RespostaSimples manifestar(String chaveAcesso, String cpfCnpjAutor, TipoManifestacao tipo,
+                                             String codigoMotivo, String descricaoMotivo,
+                                             Ambiente ambiente, CertificadoA1 cert, boolean confirmarProducao) {
+        String autor = (cpfCnpjAutor == null || cpfCnpjAutor.isBlank()) ? cert.cpfCnpj().orElse(null) : cpfCnpjAutor;
+        ManifestacaoNfse manifestacao = new ManifestacaoNfse(
+            chaveAcesso, autor, OffsetDateTime.now(), tipo, codigoMotivo, descricaoMotivo, VERSAO_APLICATIVO);
+        return registrarEvento(manifestacao, ambiente, cert, confirmarProducao);
+    }
+
+    private static RespostaSimples registrarEvento(PedidoRegistroEvento evento, Ambiente ambiente,
+                                                   CertificadoA1 cert, boolean confirmarProducao) {
+        exigirConfirmacaoProducao(ambiente, confirmarProducao);
+        validarCertificado(cert);
+        NfseHttpResponse response = nfse(ambiente, cert).contribuinte().registrarEvento(evento);
         return new RespostaSimples(response.statusCode(), response.isSuccessful(), ambienteLabel(ambiente), response.body());
     }
 

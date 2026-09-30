@@ -15,6 +15,10 @@ public final class PedidoRegistroEventoXmlBuilder {
     private static final String VERSAO_EVENTO = "1.00";
 
     public String buildCancelamento(int tipoAmbiente, CancelamentoNfse cancelamento) {
+        return build(tipoAmbiente, cancelamento);
+    }
+
+    public String build(int tipoAmbiente, PedidoRegistroEvento evento) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
@@ -25,21 +29,35 @@ public final class PedidoRegistroEventoXmlBuilder {
             document.appendChild(root);
 
             Element infPedReg = element(root, "infPedReg");
-            infPedReg.setAttribute("Id", cancelamento.idPedidoRegistroEvento());
+            infPedReg.setAttribute("Id", evento.idPedidoRegistroEvento());
             append(infPedReg, "tpAmb", tipoAmbiente);
-            append(infPedReg, "verAplic", cancelamento.versaoAplicativo());
+            append(infPedReg, "verAplic", evento.versaoAplicativo());
             append(
                 infPedReg,
                 "dhEvento",
-                DpsXmlBuilder.formatarDataHora(cancelamento.dataHoraEvento())
+                DpsXmlBuilder.formatarDataHora(evento.dataHoraEvento())
             );
-            append(infPedReg, cancelamento.autorPessoaJuridica() ? "CNPJAutor" : "CPFAutor", cancelamento.cpfCnpjAutor());
-            append(infPedReg, "chNFSe", cancelamento.chaveAcesso());
+            append(infPedReg, evento.autorPessoaJuridica() ? "CNPJAutor" : "CPFAutor", evento.cpfCnpjAutor());
+            append(infPedReg, "chNFSe", evento.chaveAcesso());
 
-            Element evento = element(infPedReg, "e101101");
-            append(evento, "xDesc", CancelamentoNfse.DESCRICAO_EVENTO);
-            append(evento, "cMotivo", cancelamento.codigoMotivo());
-            append(evento, "xMotivo", cancelamento.descricaoMotivo());
+            Element grupo = element(infPedReg, "e" + evento.tipoEvento());
+            switch (evento) {
+                case CancelamentoNfse cancelamento -> {
+                    append(grupo, "xDesc", CancelamentoNfse.DESCRICAO_EVENTO);
+                    append(grupo, "cMotivo", cancelamento.codigoMotivo());
+                    append(grupo, "xMotivo", cancelamento.descricaoMotivo());
+                }
+                case SolicitacaoAnaliseFiscalCancelamentoNfse solicitacao -> {
+                    append(grupo, "xDesc", SolicitacaoAnaliseFiscalCancelamentoNfse.DESCRICAO_EVENTO);
+                    append(grupo, "cMotivo", solicitacao.codigoMotivo());
+                    append(grupo, "xMotivo", solicitacao.descricaoMotivo());
+                }
+                case ManifestacaoNfse manifestacao -> {
+                    append(grupo, "xDesc", manifestacao.tipo().descricao());
+                    append(grupo, "cMotivo", manifestacao.codigoMotivo());
+                    append(grupo, "xMotivo", manifestacao.descricaoMotivo());
+                }
+            }
 
             return toXml(document);
         } catch (Exception exception) {
