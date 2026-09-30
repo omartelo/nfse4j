@@ -5,6 +5,8 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [0.6.1] - 2026-09-30
+
 ### Corrigido
 - **DPS e pedido de evento com CNPJ alfanumérico agora falham na montagem, com mensagem clara.** O
   leiaute da NFS-e Nacional ainda exige CNPJ numérico: `TSCNPJ` é `[0-9]{14}` e `TSIdDPS` é
@@ -247,7 +249,8 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - `nfse-cli` — CLI para humanos e agentes que rodam shell.
 - Homologação por padrão; produção exige confirmação explícita.
 
-[Não lançado]: https://github.com/omartelo/nfse4j/compare/v0.6.0...HEAD
+[Não lançado]: https://github.com/omartelo/nfse4j/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/omartelo/nfse4j/releases/tag/v0.6.1
 [0.6.0]: https://github.com/omartelo/nfse4j/releases/tag/v0.6.0
 [0.5.0]: https://github.com/omartelo/nfse4j/releases/tag/v0.5.0
 [0.4.5]: https://github.com/rafael-matos-dev/nfse-java-mcp/releases/tag/v0.4.5
