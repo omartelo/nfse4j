@@ -1,0 +1,2 @@
+# XSDs oficiais da NFS-e Nacional mantidos byte a byte (CRLF/BOM) para conferencia com o pacote do gov.br.
+nfse4j-core/src/main/resources/io/github/omartelo/nfse4j/core/xml/xsd/*.xsd -text
