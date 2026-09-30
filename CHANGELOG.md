@@ -9,6 +9,12 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 - **Eventos de uma NFS-e pela chave de acesso** (distribuição de DF-e do ADN) na CLI e no MCP:
   `NfseRunner.consultarEventosDfe`, ferramenta `consultar_eventos_dfe` e comando
   `consultar-eventos-dfe`. Devolvem só o resumo; o XML de cada evento sai por `consultar_dfe` pelo NSU.
+- **Emissão de NFS-e substituta.** A DPS ganha o grupo `subst` (`Dps.Substituicao`: chave da nota
+  substituída, código e descrição do motivo), gerado na posição do XSD v1.01 e com os domínios
+  validados na construção. A SEFIN cancela a nota original (evento 105102) ao autorizar a substituta.
+  SDK: `EmitirNfseRequest.substituicao` / `withSubstituicao`. MCP: `dados.substituicao` em
+  `emitir_nfse`. CLI: `emitir --substituir-chave --substituicao-motivo-codigo
+  --substituicao-motivo-descricao`. Em produção vale a mesma confirmação explícita da emissão.
 - **Validação contra o XSD oficial antes do envio.** A DPS (em `emitir`, `emitirDetalhado` e
   `emitirXml`) e os pedidos de registro de evento (cancelamento, análise fiscal e manifestação) são
   validados contra os XSDs da NFS-e Nacional v1.01, já assinados, antes de ir para a SEFIN. Violação
