@@ -66,7 +66,14 @@ public final class DpsXmlBuilder {
         Element prestador = element(parent, "prest");
         append(prestador, "CNPJ", data.cnpj());
         append(prestador, "CPF", data.cpf());
+        append(prestador, "NIF", data.nif());
+        append(prestador, "cNaoNIF", data.codigoNaoNif());
+        append(prestador, "CAEPF", data.caepf());
         append(prestador, "IM", data.inscricaoMunicipal());
+        append(prestador, "xNome", data.nome());
+        if (data.endereco() != null) {
+            buildEndereco(prestador, data.endereco());
+        }
         append(prestador, "fone", data.telefone());
         append(prestador, "email", data.email());
 
@@ -82,6 +89,10 @@ public final class DpsXmlBuilder {
         Element tomador = element(parent, "toma");
         append(tomador, "CNPJ", data.cnpj());
         append(tomador, "CPF", data.cpf());
+        append(tomador, "NIF", data.nif());
+        append(tomador, "cNaoNIF", data.codigoNaoNif());
+        append(tomador, "CAEPF", data.caepf());
+        append(tomador, "IM", data.inscricaoMunicipal());
         append(tomador, "xNome", data.nome());
         if (data.endereco() != null) {
             buildEndereco(tomador, data.endereco());
@@ -96,6 +107,13 @@ public final class DpsXmlBuilder {
             Element nacional = element(endereco, "endNac");
             append(nacional, "cMun", data.codigoMunicipio());
             append(nacional, "CEP", data.cep());
+        }
+        if (data.exterior() != null) {
+            Element exterior = element(endereco, "endExt");
+            append(exterior, "cPais", data.exterior().codigoPais());
+            append(exterior, "cEndPost", data.exterior().codigoEnderecamentoPostal());
+            append(exterior, "xCidade", data.exterior().cidade());
+            append(exterior, "xEstProvReg", data.exterior().estadoProvinciaRegiao());
         }
         append(endereco, "xLgr", data.logradouro());
         append(endereco, "nro", data.numero());

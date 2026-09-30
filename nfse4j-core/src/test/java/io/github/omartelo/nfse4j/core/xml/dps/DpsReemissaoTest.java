@@ -6,9 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.omartelo.nfse4j.core.xml.XmlSchemaValidator;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -335,5 +337,97 @@ class DpsReemissaoTest {
         String xml = new DpsXmlBuilder().build(reemitirComNovoValor(exemploComValores(VALOR_SERVICO + percentuais)));
 
         assertTrue(xml.contains("<vServPrest><vServ>400.00</vServ></vServPrest>" + percentuais), xml);
+    }
+
+    private static final String REGIME_TRIBUTARIO = "<regTrib><opSimpNac>1</opSimpNac><regEspTrib>0</regEspTrib></regTrib>";
+    private static final String END_NACIONAL = "<end><endNac><cMun>3550308</cMun><CEP>01000000</CEP></endNac>"
+        + "<xLgr>Rua A</xLgr><nro>100</nro><xCpl>Sala 1</xCpl><xBairro>Centro</xBairro></end>";
+    private static final String END_EXTERIOR = "<end><endExt><cPais>US</cPais><cEndPost>10001</cEndPost>"
+        + "<xCidade>New York</xCidade><xEstProvReg>NY</xEstProvReg></endExt>"
+        + "<xLgr>5th Avenue</xLgr><nro>1</nro><xBairro>Manhattan</xBairro></end>";
+
+    private static String exemploComPessoas(String prest, String toma) {
+        return exemploMinimo()
+            .replace("<prest><CNPJ>12345678000199</CNPJ>" + REGIME_TRIBUTARIO + "</prest>", prest)
+            .replace("<toma><CPF>11122233344</CPF><xNome>Tomador</xNome></toma>", toma);
+    }
+
+    private static String reemitirXmlValidandoXsd(Dps exemplo, DpsReemissao.Overrides overrides) {
+        String xml = new DpsXmlBuilder().build(DpsReemissao.reemitir(exemplo, overrides));
+        assertEquals(List.of(), XmlSchemaValidator.validarDps(xml), xml);
+        return xml;
+    }
+
+    private static DpsReemissao.Overrides soNumero() {
+        return new DpsReemissao.Overrides(11L, null, null, null, null, null, null);
+    }
+
+    static Stream<Arguments> prestadores() {
+        return Stream.of(
+            Arguments.of("CAEPF", "<prest><CPF>11122233344</CPF><CAEPF>12345678901234</CAEPF>" + REGIME_TRIBUTARIO + "</prest>"),
+            Arguments.of("xNome", "<prest><CNPJ>12345678000199</CNPJ><xNome>Prestador Ltda</xNome>" + REGIME_TRIBUTARIO + "</prest>"),
+            Arguments.of("end nacional", "<prest><CNPJ>12345678000199</CNPJ>" + END_NACIONAL + REGIME_TRIBUTARIO + "</prest>"),
+            Arguments.of("end exterior", "<prest><CNPJ>12345678000199</CNPJ>" + END_EXTERIOR + REGIME_TRIBUTARIO + "</prest>"),
+            Arguments.of("completo", "<prest><CNPJ>12345678000199</CNPJ><CAEPF>12345678901234</CAEPF><IM>IM123</IM>"
+                + "<xNome>Prestador Ltda</xNome>" + END_NACIONAL + "<fone>1133334444</fone><email>p@exemplo.com</email>"
+                + "<regTrib><opSimpNac>3</opSimpNac><regApTribSN>1</regApTribSN><regEspTrib>0</regEspTrib></regTrib></prest>")
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("prestadores")
+    void reemissaoPreservaPrestadorDoExemplo(String caso, String prest) {
+        Dps exemplo = DpsXmlReader.read(exemploComPessoas(prest, "<toma><CPF>11122233344</CPF><xNome>Tomador</xNome></toma>"));
+
+        String xml = reemitirXmlValidandoXsd(exemplo, soNumero());
+
+        assertTrue(xml.contains(prest), xml);
+    }
+
+    @Test
+    void leituraPreservaIdentificacaoEstrangeiraDoPrestador() {
+        Dps comNif = DpsXmlReader.read(exemploComPessoas(
+            "<prest><NIF>US-123456</NIF>" + REGIME_TRIBUTARIO + "</prest>", "<toma><CPF>11122233344</CPF><xNome>Tomador</xNome></toma>"));
+        Dps semNif = DpsXmlReader.read(exemploComPessoas(
+            "<prest><cNaoNIF>2</cNaoNIF>" + REGIME_TRIBUTARIO + "</prest>", "<toma><CPF>11122233344</CPF><xNome>Tomador</xNome></toma>"));
+
+        assertEquals("US-123456", comNif.infDps().prestador().nif());
+        assertEquals(2, semNif.infDps().prestador().codigoNaoNif());
+    }
+
+    static Stream<Arguments> tomadores() {
+        return Stream.of(
+            Arguments.of("NIF", "<toma><NIF>US-123456</NIF><xNome>Foreign Inc</xNome></toma>"),
+            Arguments.of("cNaoNIF", "<toma><cNaoNIF>1</cNaoNIF><xNome>Foreign Inc</xNome></toma>"),
+            Arguments.of("CAEPF", "<toma><CPF>11122233344</CPF><CAEPF>12345678901234</CAEPF><xNome>Tomador</xNome></toma>"),
+            Arguments.of("IM", "<toma><CNPJ>98765432000198</CNPJ><IM>IM999</IM><xNome>Tomador</xNome></toma>"),
+            Arguments.of("end exterior", "<toma><NIF>US-123456</NIF><xNome>Foreign Inc</xNome>" + END_EXTERIOR + "</toma>"),
+            Arguments.of("completo", "<toma><CNPJ>98765432000198</CNPJ><CAEPF>12345678901234</CAEPF><IM>IM999</IM>"
+                + "<xNome>Tomador Ltda</xNome>" + END_NACIONAL + "<fone>1144445555</fone><email>t@exemplo.com</email></toma>")
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("tomadores")
+    void reemissaoSemTrocaDeTomadorPreservaTomadorDoExemplo(String caso, String toma) {
+        Dps exemplo = DpsXmlReader.read(exemploComPessoas(
+            "<prest><CNPJ>12345678000199</CNPJ>" + REGIME_TRIBUTARIO + "</prest>", toma));
+
+        String xml = reemitirXmlValidandoXsd(exemplo, soNumero());
+
+        assertTrue(xml.contains(toma), xml);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("tomadores")
+    void trocaDeTomadorNaoHerdaDadosDoTomadorDoExemplo(String caso, String toma) {
+        Dps exemplo = DpsXmlReader.read(exemploComPessoas(
+            "<prest><CNPJ>12345678000199</CNPJ>" + REGIME_TRIBUTARIO + "</prest>", toma));
+        DpsReemissao.Overrides novoTomador = new DpsReemissao.Overrides(
+            11L, null, new Dps.Tomador(null, "55566677788", "Novo Tomador", null, null, null), null, null, null, null);
+
+        String xml = reemitirXmlValidandoXsd(exemplo, novoTomador);
+
+        assertTrue(xml.contains("<toma><CPF>55566677788</CPF><xNome>Novo Tomador</xNome></toma>"), xml);
     }
 }

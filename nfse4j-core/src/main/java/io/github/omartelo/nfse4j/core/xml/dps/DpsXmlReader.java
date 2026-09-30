@@ -92,7 +92,12 @@ public final class DpsXmlReader {
         return new Dps.Prestador(
             text(prest, "CNPJ"),
             text(prest, "CPF"),
+            text(prest, "NIF"),
+            integerOrNull(text(prest, "cNaoNIF")),
+            text(prest, "CAEPF"),
             text(prest, "IM"),
+            text(prest, "xNome"),
+            endereco(firstByLocalName(prest, "end")),
             text(prest, "fone"),
             text(prest, "email"),
             regime
@@ -103,25 +108,39 @@ public final class DpsXmlReader {
         if (toma == null) {
             return null;
         }
-        Element end = firstByLocalName(toma, "end");
-        Dps.Endereco endereco = null;
-        if (end != null) {
-            endereco = new Dps.Endereco(
-                text(end, "cMun"),
-                text(end, "CEP"),
-                text(end, "xLgr"),
-                text(end, "nro"),
-                text(end, "xCpl"),
-                text(end, "xBairro")
-            );
-        }
         return new Dps.Tomador(
             text(toma, "CNPJ"),
             text(toma, "CPF"),
+            text(toma, "NIF"),
+            integerOrNull(text(toma, "cNaoNIF")),
+            text(toma, "CAEPF"),
+            text(toma, "IM"),
             text(toma, "xNome"),
-            endereco,
+            endereco(firstByLocalName(toma, "end")),
             text(toma, "fone"),
             text(toma, "email")
+        );
+    }
+
+    private static Dps.Endereco endereco(Element end) {
+        if (end == null) {
+            return null;
+        }
+        Element endExt = firstByLocalName(end, "endExt");
+        Dps.EnderecoExterior exterior = endExt == null ? null : new Dps.EnderecoExterior(
+            text(endExt, "cPais"),
+            text(endExt, "cEndPost"),
+            text(endExt, "xCidade"),
+            text(endExt, "xEstProvReg")
+        );
+        return new Dps.Endereco(
+            text(end, "cMun"),
+            text(end, "CEP"),
+            exterior,
+            text(end, "xLgr"),
+            text(end, "nro"),
+            text(end, "xCpl"),
+            text(end, "xBairro")
         );
     }
 

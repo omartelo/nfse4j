@@ -56,6 +56,11 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   `valorServico` sobrescrito, `vDR`, descontos, `vRedBCBM`, PIS/COFINS, retenções federais e `vTotTrib`
   do exemplo ficariam incoerentes com o novo valor. Agora o `DpsReemissao` recusa a troca listando os
   campos. Percentuais seguem copiados, inclusive o `pDR`, que antes se perdia na troca.
+- **Reemissão a partir de nota de exemplo perdia dados do prestador e do tomador.** O leitor
+  descartava `NIF`, `cNaoNIF`, `CAEPF`, o nome e o endereço do prestador, a `IM` do tomador e o
+  endereço no exterior (`endExt`). O `Dps.Prestador`, o `Dps.Tomador` e o `Dps.Endereco` passam a
+  modelar esses campos, lidos e gerados na ordem do XSD. Com tomador sobrescrito, nada do tomador do
+  exemplo passa para o novo.
 
 ### Alterado
 - **O `nfse4j-core` passa a depender do Gson** (Apache-2.0), para ler o JSON das APIs do ADN. Deixa

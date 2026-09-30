@@ -40,11 +40,27 @@ public record Dps(String versao, InfDps infDps) {
     public record Prestador(
         String cnpj,
         String cpf,
+        String nif,
+        Integer codigoNaoNif,
+        String caepf,
         String inscricaoMunicipal,
+        String nome,
+        Endereco endereco,
         String telefone,
         String email,
         RegimeTributario regimeTributario
     ) {
+        public Prestador(
+            String cnpj,
+            String cpf,
+            String inscricaoMunicipal,
+            String telefone,
+            String email,
+            RegimeTributario regimeTributario
+        ) {
+            this(cnpj, cpf, null, null, null, inscricaoMunicipal, null, null, telefone, email, regimeTributario);
+        }
+
         public Prestador(String cnpj, String cpf, String telefone, String email, RegimeTributario regimeTributario) {
             this(cnpj, cpf, null, telefone, email, regimeTributario);
         }
@@ -60,17 +76,48 @@ public record Dps(String versao, InfDps infDps) {
         }
     }
 
-    public record Tomador(String cnpj, String cpf, String nome, Endereco endereco, String telefone, String email) {
+    /** TCInfoPessoa do XSD: identificado por CNPJ, CPF, NIF ou cNaoNIF (motivo de nao informar o NIF). */
+    public record Tomador(
+        String cnpj,
+        String cpf,
+        String nif,
+        Integer codigoNaoNif,
+        String caepf,
+        String inscricaoMunicipal,
+        String nome,
+        Endereco endereco,
+        String telefone,
+        String email
+    ) {
+        public Tomador(String cnpj, String cpf, String nome, Endereco endereco, String telefone, String email) {
+            this(cnpj, cpf, null, null, null, null, nome, endereco, telefone, email);
+        }
     }
 
+    /** Endereco nacional (cMun e CEP) ou no exterior; o XSD aceita so um dos dois. */
     public record Endereco(
         String codigoMunicipio,
         String cep,
+        EnderecoExterior exterior,
         String logradouro,
         String numero,
         String complemento,
         String bairro
     ) {
+        public Endereco(
+            String codigoMunicipio,
+            String cep,
+            String logradouro,
+            String numero,
+            String complemento,
+            String bairro
+        ) {
+            this(codigoMunicipio, cep, null, logradouro, numero, complemento, bairro);
+        }
+    }
+
+    /** endExt: pais (ISO 3166-1 alfa-2), codigo postal, cidade e estado/provincia/regiao. */
+    public record EnderecoExterior(String codigoPais, String codigoEnderecamentoPostal, String cidade, String estadoProvinciaRegiao) {
     }
 
     public record Servico(
