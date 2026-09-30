@@ -17,7 +17,7 @@ import org.w3c.dom.NodeList;
  * e reconstroi o modelo {@link Dps}. Usado para o fluxo "emitir a partir de uma nota de exemplo":
  * a pessoa aponta uma nota antiga e so troca tomador/descricao/valor (ver {@link DpsReemissao}).
  *
- * <p>Implementacao com DOM do JDK para manter a SDK sem dependencias de runtime.
+ * <p>Implementacao com DOM do JDK, sem biblioteca de XML.
  */
 public final class DpsXmlReader {
 

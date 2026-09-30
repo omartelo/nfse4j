@@ -19,7 +19,6 @@ import java.util.Optional;
 /**
  * Facade de alto nivel da SDK: uma chamada por operacao de NFS-e, compartilhada por CLI e MCP.
  * Centraliza a trava de producao: operacoes de escrita em PRODUCAO exigem confirmacao explicita.
- * Sem dependencias externas (mantem a SDK zero-dep).
  */
 public final class NfseRunner {
 
