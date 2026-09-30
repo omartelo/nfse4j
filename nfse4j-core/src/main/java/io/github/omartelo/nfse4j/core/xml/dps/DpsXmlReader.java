@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Objects;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
@@ -21,6 +22,16 @@ import org.w3c.dom.NodeList;
  */
 public final class DpsXmlReader {
 
+    /**
+     * Grupos do infDPS (XSD DPS v1.01) que o modelo {@link Dps} nao representa. Ler um exemplo com eles
+     * descartaria os dados em silencio e a nota reemitida sairia diferente da original.
+     */
+    private static final List<String> GRUPOS_NAO_SUPORTADOS = List.of(
+        "cMotivoEmisTI", "chNFSeRej", "subst", "interm", "IBSCBS",
+        "cPaisPrestacao", "cIntContrib", "comExt", "obra", "atvEvento", "infoCompl",
+        "vDedRed/documentos"
+    );
+
     private DpsXmlReader() {
     }
 
@@ -32,6 +43,7 @@ public final class DpsXmlReader {
             if (infDps == null) {
                 throw new DpsXmlException("XML nao contem elemento infDPS.");
             }
+            recusarGruposNaoSuportados(infDps);
             String versao = versaoDaDps(infDps);
 
             Dps.InfDps inf = new Dps.InfDps(
@@ -54,6 +66,16 @@ public final class DpsXmlReader {
             throw exception;
         } catch (Exception exception) {
             throw new DpsXmlException("Nao foi possivel ler o XML de exemplo da DPS.", exception);
+        }
+    }
+
+    private static void recusarGruposNaoSuportados(Element infDps) {
+        List<String> presentes = GRUPOS_NAO_SUPORTADOS.stream()
+            .filter(caminho -> byPath(infDps, caminho) != null)
+            .toList();
+        if (!presentes.isEmpty()) {
+            throw new DpsXmlException("Exemplo contem grupos que a reemissao nao suporta e seriam perdidos: "
+                + String.join(", ", presentes) + ".");
         }
     }
 
@@ -184,6 +206,15 @@ public final class DpsXmlReader {
             }
         }
         return null;
+    }
+
+    /** Resolve um caminho de local names separados por '/', cada passo com {@link #firstByLocalName}. */
+    private static Element byPath(Element scope, String path) {
+        Element current = scope;
+        for (String localName : path.split("/")) {
+            current = firstByLocalName(current, localName);
+        }
+        return current;
     }
 
     /** Texto do primeiro descendente com o local name informado, ou null. */

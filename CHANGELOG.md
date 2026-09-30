@@ -39,6 +39,10 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   `IllegalArgumentException` dizendo quais campos vieram juntos. Na emissão, informar
   `indicadorTotalTributos` junto com `percentualTotalTributosSimplesNacional` passa a falhar assim, em
   vez de gerar um XML que a SEFIN recusaria.
+- **Reemissão a partir de nota de exemplo perdia grupos da DPS em silêncio.** O leitor ignorava
+  `cMotivoEmisTI`, `chNFSeRej`, `subst`, `interm`, `IBSCBS`, `cPaisPrestacao`, `cIntContrib`, `comExt`,
+  `obra`, `atvEvento`, `infoCompl` e os documentos de `vDedRed`, e a nota saía sem eles. Agora a leitura
+  falha com `DpsXmlException` nomeando os grupos presentes.
 
 ### Alterado
 - **O `nfse4j-core` passa a depender do Gson** (Apache-2.0), para ler o JSON das APIs do ADN. Deixa
