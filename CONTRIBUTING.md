@@ -16,6 +16,13 @@ Contribuições são bem-vindas! Algumas diretrizes:
 ./gradlew :nfse4j-core:test    # so o SDK
 ```
 
+## Release
+
+1. Atualize `version` no `gradle.properties` e mova as entradas de "Não lançado" do `CHANGELOG.md` para a nova versão.
+2. Commite na `main` e envie a tag: `git tag -a vX.Y.Z -m vX.Y.Z && git push origin main vX.Y.Z`.
+
+O workflow `Release` confere se a tag bate com o `gradle.properties`, roda os testes, publica o `nfse4j-core` e o `nfse4j-danfse` no Maven Central e cria a GitHub Release com os jars do CLI e do MCP. Uma versão publicada no Central não pode ser apagada nem sobrescrita: correção vira nova versão.
+
 ## Segurança — leia antes de commitar
 
 - **Nunca** inclua certificados reais (`.pfx`/`.p12`), `.env` com senha, ou XMLs de notas emitidas (dados de contribuinte). O `.gitignore` bloqueia esses arquivos — confirme antes de cada commit.

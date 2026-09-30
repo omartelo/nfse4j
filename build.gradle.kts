@@ -34,9 +34,10 @@ subprojects {
     }
 }
 
-// Publicacao no Maven Central (Sonatype Central Portal): ./gradlew publishToMavenCentral
-// Exige mavenCentralUsername/mavenCentralPassword e signingInMemoryKey/signingInMemoryKeyPassword
-// em ~/.gradle/gradle.properties (ou ORG_GRADLE_PROJECT_*). cli e mcp sao apps (fat jars) e ficam de fora.
+// Publicacao no Maven Central (Sonatype Central Portal): feita pelo workflow de release ao enviar uma
+// tag v*, com as credenciais nos secrets do repo. Manual: ./gradlew publishToMavenCentral com
+// mavenCentralUsername/mavenCentralPassword e signingInMemoryKey/signingInMemoryKeyPassword em
+// ~/.gradle/gradle.properties (ou ORG_GRADLE_PROJECT_*). cli e mcp sao apps (fat jars) e ficam de fora.
 configure(listOf(project(":nfse4j-core"), project(":nfse4j-danfse"))) {
     apply(plugin = "com.vanniktech.maven.publish")
 

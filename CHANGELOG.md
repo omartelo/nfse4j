@@ -5,6 +5,10 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+### Alterado
+- O workflow de release passa a publicar o `nfse4j-core` e o `nfse4j-danfse` no Maven Central ao
+  receber uma tag `v*`, depois de conferir que a tag bate com a versão do `gradle.properties`.
+
 ## [0.5.0] - 2026-09-30
 
 ### Corrigido
