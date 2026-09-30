@@ -92,6 +92,8 @@ Depois, é só conversar com o agente: _"Emita uma NFS-e de R$ 100 para o CPF 11
 | `emitir_de_exemplo` | Reaproveita uma nota anterior (XML), trocando só tomador/descrição/valor. |
 | `consultar_nfse` | Consulta uma NFS-e pela chave de acesso. |
 | `cancelar_nfse` | Cancela uma NFS-e (evento 101101). |
+| `distribuir_dfe` | Lista as NFS-e e eventos em que o CNPJ do certificado é emitente, tomador ou intermediário (distribuição de DF-e do ADN), a partir de um NSU. Devolve só o resumo. |
+| `consultar_dfe` | Traz o XML de um documento da distribuição pelo NSU. |
 | `gerar_danfse` | **Gera o PDF do DANFSe localmente** a partir do XML da NFS-e. |
 
 Todas aceitam `ambiente` (`homologacao` por padrão) e, nas operações de escrita, `confirmarProducao` (obrigatório `true` para produção). O certificado vem das envs `NFSE_CERT_PATH`/`NFSE_CERT_PASSWORD` ou dos parâmetros da ferramenta.
@@ -108,6 +110,8 @@ java -jar $JAR emitir-de-exemplo --exemplo nota-antiga.xml --numero 123 \
   --tomador-cpf 11144477735 --tomador-nome "Fulano" --descricao "Consultoria" --valor 250.00
 java -jar $JAR consultar --chave CHAVE_DA_NFSE --json
 java -jar $JAR danfse --xml nota.xml --saida danfse.pdf
+java -jar $JAR distribuir-dfe --nsu 0 --json      # notas emitidas contra o CNPJ (resumo)
+java -jar $JAR consultar-dfe --nsu 42 --json      # XML de um documento da distribuição
 # Producao (documento fiscal REAL) exige a flag:
 java -jar $JAR emitir --arquivo nota.json --ambiente producao --confirmar-producao
 ```
@@ -135,6 +139,39 @@ System.out.println(resultado.chaveAcesso());
 ```
 
 O `nfse4j-core` tem uma única dependência de runtime, o **Gson** (JSON das APIs do ADN). O resto vem do JDK (HTTP via `java.net.http`, assinatura via `javax.xml.crypto.dsig`, mTLS via `SSLContext` do A1).
+
+## Notas emitidas contra o CNPJ (distribuição de DF-e do ADN)
+
+A distribuição do ADN entrega, em ordem de NSU, os documentos em que o CNPJ do certificado é
+**emitente, tomador ou intermediário**: é por ela que se descobrem as NFS-e emitidas *contra* o CNPJ.
+A autenticação é o próprio certificado (mTLS), sem token.
+
+```java
+var context = NfseContext.builder().ambiente(Ambiente.PRODUCAO).certificado(cert).build();
+var distribuicao = new DistribuicaoDfeClient(context);
+
+long ultimoNsu = 0;                // recupere do seu armazenamento; 0 começa do início
+DrenagemDfe drenagem = distribuicao.drenar(ultimoNsu, null, 50); // cnpjConsulta, trava de lotes
+for (var documento : drenagem.documentos()) {
+    documento.tipoDocumento();     // NFSE, EVENTO, DPS, CNC...
+    documento.chaveAcesso();       // 50 dígitos
+    documento.xml();               // XML já desempacotado (o ADN entrega em gzip+base64)
+}
+// guarde drenagem.ultimoNsu(); concluida() == false quer dizer que a trava parou antes do fim
+```
+
+O `drenar` cuida das armadilhas do serviço: o ADN não informa teto de NSU (a drenagem termina em
+`NENHUM_DOCUMENTO_LOCALIZADO`), o lote seguinte pode repetir o NSU de partida, e `REJEICAO` lança
+`DistribuicaoDfeException` em vez de parecer lote vazio. Para controlar lote a lote, use
+`distribuir(nsu, cnpjConsulta)`, `consultarNsu(nsu, cnpjConsulta)` e `consultarEventos(chave)`, que
+devolvem o `LoteDistribuicaoDfe` tipado; HTTP 400 e 404 são respostas de negócio (ex.: `E2215`,
+`E2230`) e chegam em `erros()`, não como exceção.
+
+`cnpjConsulta` é opcional (`null` usa o CNPJ do certificado); quando informado, precisa ter a mesma
+raiz do certificado e ir sem máscara (aceita CNPJ alfanumérico).
+
+O `NfseRunner.distribuirDfe` / `consultarDfe` são a versão usada pela CLI e pelo MCP: resumo sem XML,
+até 10 lotes por chamada, e o XML de um NSU sob demanda.
 
 ## Emitir a partir de uma nota de exemplo
 

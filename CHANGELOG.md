@@ -11,6 +11,10 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   assinados, antes de ir para a SEFIN. Violação lança `XmlSchemaValidationException`, com linha,
   coluna, elemento e mensagem do schema; nada é enviado. `XmlSchemaValidator` é público para validar
   DPS e pedido de registro de evento avulsos.
+- **Distribuição de DF-e do ADN**: descobre as NFS-e em que o CNPJ do certificado é emitente, tomador
+  ou intermediário (as notas emitidas contra o CNPJ). SDK: `DistribuicaoDfeClient` (lote a partir do
+  NSU, NSU único, eventos por chave e `drenar` com trava de lotes). MCP: `distribuir_dfe` (resumo) e
+  `consultar_dfe` (XML por NSU). CLI: `distribuir-dfe` e `consultar-dfe`.
 
 ### Corrigido
 - **Reemissão a partir de nota de exemplo gerava DPS sem `totTrib`.** O leitor descartava
