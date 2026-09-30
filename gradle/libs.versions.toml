@@ -1,6 +1,7 @@
 [versions]
 junit = "5.12.2"
 jackson = "2.18.2"
+gson = "2.14.0"
 mcp = "1.0.2"
 bouncycastle = "1.78.1"
 openhtmltopdf = "1.0.10"
@@ -15,6 +16,8 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+# JSON das APIs do ADN no nfse4j-core (Apache-2.0).
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 mcp = { module = "io.modelcontextprotocol.sdk:mcp", version.ref = "mcp" }
 bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 bouncycastle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }

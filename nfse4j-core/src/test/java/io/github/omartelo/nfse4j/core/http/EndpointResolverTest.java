@@ -32,4 +32,23 @@ class EndpointResolverTest {
         assertEquals(URI.create("https://homologacao.example.test"), resolver.sefin(Ambiente.HOMOLOGACAO));
         assertEquals(URI.create("https://producao.example.test"), resolver.sefin(Ambiente.PRODUCAO));
     }
+
+    @Test
+    void shouldResolveOfficialAdnEndpoints() {
+        EndpointResolver resolver = EndpointResolver.defaultResolver();
+
+        assertEquals(URI.create("https://adn.producaorestrita.nfse.gov.br"), resolver.adn(Ambiente.HOMOLOGACAO));
+        assertEquals(URI.create("https://adn.nfse.gov.br"), resolver.adn(Ambiente.PRODUCAO));
+    }
+
+    @Test
+    void shouldKeepOfficialAdnEndpointsWhenOnlySefinIsCustomized() {
+        EndpointResolver resolver = EndpointResolver.withSefinEndpoints(
+            URI.create("https://homologacao.example.test"),
+            URI.create("https://producao.example.test")
+        );
+
+        assertEquals(URI.create("https://adn.producaorestrita.nfse.gov.br"), resolver.adn(Ambiente.HOMOLOGACAO));
+        assertEquals(URI.create("https://adn.nfse.gov.br"), resolver.adn(Ambiente.PRODUCAO));
+    }
 }

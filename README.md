@@ -6,13 +6,13 @@
 
 **Emita NFS-e Nacional pelo seu agente de IA — ou direto do seu código Java.**
 
-No coração, `nfse4j` é um **SDK Java** (zero dependências de runtime) para a **NFS-e Nacional** (padrão nacional brasileiro da Nota Fiscal de Serviço eletrônica). Sobre esse motor vêm duas portas de entrada: um **servidor MCP**, para um agente de IA emitir notas conversando (a pessoa só aponta o certificado, dá os dados do tomador — ou uma nota de exemplo — a descrição e o valor), e uma **CLI**, para o terminal. As três camadas usam o mesmo núcleo.
+No coração, `nfse4j` é um **SDK Java** (uma única dependência de runtime, o Gson) para a **NFS-e Nacional** (padrão nacional brasileiro da Nota Fiscal de Serviço eletrônica). Sobre esse motor vêm duas portas de entrada: um **servidor MCP**, para um agente de IA emitir notas conversando (a pessoa só aponta o certificado, dá os dados do tomador — ou uma nota de exemplo — a descrição e o valor), e uma **CLI**, para o terminal. As três camadas usam o mesmo núcleo.
 
 > ⚠️ **Documento fiscal real.** O padrão é **homologação** (produção restrita, ambiente de teste). Emitir em **produção** cria um documento fiscal com efeito tributário real e exige confirmação explícita (`confirmarProducao=true` / `--confirmar-producao`).
 
 ## Por que existe
 
-As bibliotecas Java de NFS-e existentes atendem padrões municipais antigos ou são provas de conceito. Faltava um **motor Java limpo e embarcável** para o padrão **nacional** — com zero dependências de runtime — e, por cima dele, um **servidor MCP** (1 runtime só) que deixa um agente de IA emitir notas conversando. É isso que este projeto entrega.
+As bibliotecas Java de NFS-e existentes atendem padrões municipais antigos ou são provas de conceito. Faltava um **motor Java limpo e embarcável** para o padrão **nacional** — com uma única dependência de runtime — e, por cima dele, um **servidor MCP** (1 runtime só) que deixa um agente de IA emitir notas conversando. É isso que este projeto entrega.
 
 ## Arquitetura: um motor, três portas
 
@@ -31,7 +31,7 @@ O `nfse4j-core` é o motor. O `nfse4j-mcp` e o `nfse4j-cli` são camadas finas p
         │                        │
 ┌───────▼───────┐       ┌────────▼────────┐
 │  nfse4j-core  │       │  nfse4j-danfse  │  ← gera o PDF do DANFSe local
-│  (zero-dep)   │       │   (HTML→PDF)    │
+│  (só Gson)    │       │   (HTML→PDF)    │
 └───────────────┘       └─────────────────┘
    ↑ Maven Central
 ```
@@ -134,7 +134,7 @@ var resultado = NfseRunner.emitir(
 System.out.println(resultado.chaveAcesso());
 ```
 
-O `nfse4j-core` não tem dependências de runtime (HTTP via `java.net.http`, assinatura via `javax.xml.crypto.dsig`, mTLS via `SSLContext` do A1).
+O `nfse4j-core` tem uma única dependência de runtime, o **Gson** (JSON das APIs do ADN). O resto vem do JDK (HTTP via `java.net.http`, assinatura via `javax.xml.crypto.dsig`, mTLS via `SSLContext` do A1).
 
 ## Emitir a partir de uma nota de exemplo
 
@@ -202,4 +202,4 @@ byte[] pdf = DanfseGenerator.gerarPdf(nfseXml, false, cfg, Path.of("danfse.pdf")
 
 [MIT](LICENSE) © Rafael Matos (projeto original, `nfse-java-mcp`), omartelo
 
-O `nfse4j-core` é zero-dependências. O `nfse4j-danfse` depende de **OpenHTMLtoPDF** (LGPL-2.1), **Apache PDFBox** (Apache-2.0) e **ZXing** (Apache-2.0) — todas dependências de runtime, sem afetar a licença MIT deste código. Os fat jars do CLI e do MCP agregam essas e outras bibliotecas; a lista e as licenças estão em [`THIRD-PARTY.md`](THIRD-PARTY.md).
+O `nfse4j-core` depende só do **Gson** (Apache-2.0). O `nfse4j-danfse` depende de **OpenHTMLtoPDF** (LGPL-2.1), **Apache PDFBox** (Apache-2.0) e **ZXing** (Apache-2.0) — todas dependências de runtime, sem afetar a licença MIT deste código. Os fat jars do CLI e do MCP agregam essas e outras bibliotecas; a lista e as licenças estão em [`THIRD-PARTY.md`](THIRD-PARTY.md).
