@@ -6,6 +6,7 @@ import io.github.omartelo.nfse4j.core.api.NfseRunner;
 import io.github.omartelo.nfse4j.core.certificate.CertificadoA1;
 import io.github.omartelo.nfse4j.core.xml.dps.Dps;
 import io.github.omartelo.nfse4j.core.xml.dps.DpsReemissao;
+import io.github.omartelo.nfse4j.core.xml.evento.TipoManifestacao;
 import io.modelcontextprotocol.json.McpJsonMapper;
 import io.modelcontextprotocol.json.jackson3.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.server.McpServer;
@@ -167,6 +168,48 @@ public final class NfseMcpServer {
                 return ok(NfseRunner.cancelar(
                     exigirTexto(a, "chaveAcesso"), texto(a, "autorCpfCnpj"), intOr(a.get("numeroPedido"), 1, "numeroPedido"),
                     exigirTexto(a, "codigoMotivo"), exigirTexto(a, "descricaoMotivo"),
+                    ambiente(a), certificado(a), confirmar(a)));
+            }));
+
+        tools.add(tool(jsonMapper, "solicitar_analise_fiscal_cancelamento",
+            "Pede ao municipio a analise fiscal para cancelar uma NFS-e (evento 101103), para quando o cancelamento direto nao e mais aceito. Producao exige confirmarProducao=true.",
+            """
+            {"type":"object","required":["chaveAcesso","codigoMotivo","descricaoMotivo"],"properties":{
+              "chaveAcesso":{"type":"string"},
+              "codigoMotivo":{"type":"string","enum":["1","2","9"],"description":"1 erro na emissao, 2 servico nao prestado, 9 outros."},
+              "descricaoMotivo":{"type":"string","description":"15 a 255 caracteres."},
+              "autorCpfCnpj":{"type":"string","description":"Se omitido, usa o CNPJ/CPF do certificado."},
+              "ambiente":{"type":"string","enum":["homologacao","producao"],"default":"homologacao"},
+              "confirmarProducao":{"type":"boolean","default":false},
+              "caminhoCertificado":{"type":"string"},"senhaCertificado":{"type":"string"}
+            }}""",
+            (ex, req) -> {
+                Map<String, Object> a = req.arguments();
+                return ok(NfseRunner.solicitarAnaliseFiscalCancelamento(
+                    exigirTexto(a, "chaveAcesso"), texto(a, "autorCpfCnpj"),
+                    exigirTexto(a, "codigoMotivo"), exigirTexto(a, "descricaoMotivo"),
+                    ambiente(a), certificado(a), confirmar(a)));
+            }));
+
+        tools.add(tool(jsonMapper, "manifestar_nfse",
+            "Registra manifestacao sobre uma NFS-e: confirmacao ou rejeicao pelo prestador, tomador ou intermediario (eventos 202201, 203202, 204203, 202205, 203206, 204207). Producao exige confirmarProducao=true.",
+            """
+            {"type":"object","required":["chaveAcesso","tipo"],"properties":{
+              "chaveAcesso":{"type":"string"},
+              "tipo":{"type":"string","enum":["CONFIRMACAO_PRESTADOR","CONFIRMACAO_TOMADOR","CONFIRMACAO_INTERMEDIARIO","REJEICAO_PRESTADOR","REJEICAO_TOMADOR","REJEICAO_INTERMEDIARIO"]},
+              "codigoMotivo":{"type":"string","enum":["1","2","3","4","5","9"],"description":"Obrigatorio na rejeicao, proibido na confirmacao. 1 duplicidade, 2 ja emitida pelo tomador, 3 fato gerador nao ocorreu, 4 erro de responsabilidade tributaria, 5 erro de valor/servico/data, 9 outros."},
+              "descricaoMotivo":{"type":"string","description":"Opcional na rejeicao (15 a 255 caracteres)."},
+              "autorCpfCnpj":{"type":"string","description":"Se omitido, usa o CNPJ/CPF do certificado."},
+              "ambiente":{"type":"string","enum":["homologacao","producao"],"default":"homologacao"},
+              "confirmarProducao":{"type":"boolean","default":false},
+              "caminhoCertificado":{"type":"string"},"senhaCertificado":{"type":"string"}
+            }}""",
+            (ex, req) -> {
+                Map<String, Object> a = req.arguments();
+                return ok(NfseRunner.manifestar(
+                    exigirTexto(a, "chaveAcesso"), texto(a, "autorCpfCnpj"),
+                    TipoManifestacao.valueOf(exigirTexto(a, "tipo")),
+                    texto(a, "codigoMotivo"), texto(a, "descricaoMotivo"),
                     ambiente(a), certificado(a), confirmar(a)));
             }));
 
