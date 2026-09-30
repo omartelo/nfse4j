@@ -21,6 +21,13 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
   `consultar_historico_aliquotas`, `consultar_convenio_municipio`, `consultar_beneficio_municipal`,
   `consultar_regimes_especiais` e `consultar_retencoes_municipio`; na CLI os comandos `aliquota`,
   `historico-aliquotas`, `convenio`, `beneficio`, `regimes-especiais` e `retencoes`.
+- **Eventos de NFS-e do contribuinte além do cancelamento.** Solicitação de análise fiscal para
+  cancelamento (101103) e manifestação de NFS-e: confirmação e rejeição por prestador, tomador e
+  intermediário (202201, 203202, 204203, 202205, 203206, 204207). No SDK:
+  `NfseRunner.solicitarAnaliseFiscalCancelamento`, `NfseRunner.manifestar` e
+  `ContribuinteService.registrarEvento(PedidoRegistroEvento)`; no MCP: `solicitar_analise_fiscal_cancelamento`
+  e `manifestar_nfse`; no CLI: `solicitar-analise-cancelamento` e `manifestar`. Em produção, exigem a
+  mesma confirmação explícita das outras operações de escrita.
 
 ### Corrigido
 - **Reemissão a partir de nota de exemplo gerava DPS sem `totTrib`.** O leitor descartava

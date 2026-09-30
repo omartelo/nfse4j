@@ -92,6 +92,8 @@ Depois, é só conversar com o agente: _"Emita uma NFS-e de R$ 100 para o CPF 11
 | `emitir_de_exemplo` | Reaproveita uma nota anterior (XML), trocando só tomador/descrição/valor. |
 | `consultar_nfse` | Consulta uma NFS-e pela chave de acesso. |
 | `cancelar_nfse` | Cancela uma NFS-e (evento 101101). |
+| `solicitar_analise_fiscal_cancelamento` | Pede ao município a análise fiscal para cancelar uma NFS-e (evento 101103). |
+| `manifestar_nfse` | Confirma ou rejeita uma NFS-e como prestador, tomador ou intermediário (eventos 202201, 203202, 204203, 202205, 203206, 204207). |
 | `distribuir_dfe` | Lista as NFS-e e eventos em que o CNPJ do certificado é emitente, tomador ou intermediário (distribuição de DF-e do ADN), a partir de um NSU. Devolve só o resumo. |
 | `consultar_dfe` | Traz o XML de um documento da distribuição pelo NSU. |
 | `gerar_danfse` | **Gera o PDF do DANFSe localmente** a partir do XML da NFS-e. |
@@ -117,6 +119,10 @@ java -jar $JAR emitir --arquivo docs/exemplos/emitir.request.json --json
 java -jar $JAR emitir-de-exemplo --exemplo nota-antiga.xml --numero 123 \
   --tomador-cpf 11144477735 --tomador-nome "Fulano" --descricao "Consultoria" --valor 250.00
 java -jar $JAR consultar --chave CHAVE_DA_NFSE --json
+java -jar $JAR solicitar-analise-cancelamento --chave CHAVE_DA_NFSE --motivo-codigo 2 \
+  --motivo-descricao "Servico nao foi prestado"
+java -jar $JAR manifestar --chave CHAVE_DA_NFSE --tipo confirmacao-tomador
+java -jar $JAR manifestar --chave CHAVE_DA_NFSE --tipo rejeicao-tomador --motivo-codigo 1
 java -jar $JAR danfse --xml nota.xml --saida danfse.pdf
 java -jar $JAR distribuir-dfe --nsu 0 --json      # notas emitidas contra o CNPJ (resumo)
 java -jar $JAR consultar-dfe --nsu 42 --json      # XML de um documento da distribuição
