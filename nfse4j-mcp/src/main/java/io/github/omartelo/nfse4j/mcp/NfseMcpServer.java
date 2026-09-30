@@ -201,6 +201,100 @@ public final class NfseMcpServer {
                 return ok(r);
             }));
 
+        tools.add(tool(jsonMapper, "consultar_aliquota",
+            "Consulta no ADN a aliquota de ISS de um servico em um municipio. Use antes de emitir para conferir se ha incidencia e qual aliquota aplicar. Somente leitura.",
+            """
+            {"type":"object","required":["codigoMunicipio","codigoServico"],"properties":{
+              "codigoMunicipio":{"type":"string","description":"Codigo IBGE do municipio (7 digitos)."},
+              "codigoServico":{"type":"string","description":"Codigo de tributacao nacional: 6 ou 9 digitos, com ou sem pontos (010101 ou 01.01.01.000)."},
+              "competencia":{"type":"string","description":"Data de competencia (YYYY-MM-DD). Padrao: hoje."},
+              "ambiente":{"type":"string","enum":["homologacao","producao"],"default":"homologacao"},
+              "caminhoCertificado":{"type":"string"},"senhaCertificado":{"type":"string"}
+            }}""",
+            (ex, req) -> {
+                Map<String, Object> a = req.arguments();
+                return ok(NfseRunner.consultarAliquota(
+                    exigirTexto(a, "codigoMunicipio"), exigirTexto(a, "codigoServico"),
+                    dateOrNull(a.get("competencia"), "competencia"), ambiente(a), certificado(a)));
+            }));
+
+        tools.add(tool(jsonMapper, "consultar_historico_aliquotas",
+            "Lista no ADN todas as aliquotas de ISS que um servico ja teve em um municipio, com as vigencias. Somente leitura.",
+            """
+            {"type":"object","required":["codigoMunicipio","codigoServico"],"properties":{
+              "codigoMunicipio":{"type":"string","description":"Codigo IBGE do municipio (7 digitos)."},
+              "codigoServico":{"type":"string","description":"Codigo de tributacao nacional: 6 ou 9 digitos, com ou sem pontos."},
+              "ambiente":{"type":"string","enum":["homologacao","producao"],"default":"homologacao"},
+              "caminhoCertificado":{"type":"string"},"senhaCertificado":{"type":"string"}
+            }}""",
+            (ex, req) -> {
+                Map<String, Object> a = req.arguments();
+                return ok(NfseRunner.consultarHistoricoAliquotas(
+                    exigirTexto(a, "codigoMunicipio"), exigirTexto(a, "codigoServico"), ambiente(a), certificado(a)));
+            }));
+
+        tools.add(tool(jsonMapper, "consultar_convenio_municipio",
+            "Consulta no ADN se o municipio aderiu ao ambiente nacional e ao emissor nacional da NFS-e. Somente leitura.",
+            """
+            {"type":"object","required":["codigoMunicipio"],"properties":{
+              "codigoMunicipio":{"type":"string","description":"Codigo IBGE do municipio (7 digitos)."},
+              "ambiente":{"type":"string","enum":["homologacao","producao"],"default":"homologacao"},
+              "caminhoCertificado":{"type":"string"},"senhaCertificado":{"type":"string"}
+            }}""",
+            (ex, req) -> {
+                Map<String, Object> a = req.arguments();
+                return ok(NfseRunner.consultarConvenio(exigirTexto(a, "codigoMunicipio"), ambiente(a), certificado(a)));
+            }));
+
+        tools.add(tool(jsonMapper, "consultar_beneficio_municipal",
+            "Consulta no ADN um beneficio fiscal municipal (isencao, reducao de base, aliquota diferenciada) pelo numero. Somente leitura.",
+            """
+            {"type":"object","required":["codigoMunicipio","numeroBeneficio"],"properties":{
+              "codigoMunicipio":{"type":"string","description":"Codigo IBGE do municipio (7 digitos)."},
+              "numeroBeneficio":{"type":"string","description":"Numero do beneficio fiscal cadastrado pelo municipio."},
+              "competencia":{"type":"string","description":"Data de competencia (YYYY-MM-DD). Padrao: hoje."},
+              "ambiente":{"type":"string","enum":["homologacao","producao"],"default":"homologacao"},
+              "caminhoCertificado":{"type":"string"},"senhaCertificado":{"type":"string"}
+            }}""",
+            (ex, req) -> {
+                Map<String, Object> a = req.arguments();
+                return ok(NfseRunner.consultarBeneficio(
+                    exigirTexto(a, "codigoMunicipio"), exigirTexto(a, "numeroBeneficio"),
+                    dateOrNull(a.get("competencia"), "competencia"), ambiente(a), certificado(a)));
+            }));
+
+        tools.add(tool(jsonMapper, "consultar_regimes_especiais",
+            "Consulta no ADN os regimes especiais de tributacao aceitos pelo municipio para um servico. Somente leitura.",
+            """
+            {"type":"object","required":["codigoMunicipio","codigoServico"],"properties":{
+              "codigoMunicipio":{"type":"string","description":"Codigo IBGE do municipio (7 digitos)."},
+              "codigoServico":{"type":"string","description":"Codigo de tributacao nacional: 6 ou 9 digitos, com ou sem pontos."},
+              "competencia":{"type":"string","description":"Data de competencia (YYYY-MM-DD). Padrao: hoje."},
+              "ambiente":{"type":"string","enum":["homologacao","producao"],"default":"homologacao"},
+              "caminhoCertificado":{"type":"string"},"senhaCertificado":{"type":"string"}
+            }}""",
+            (ex, req) -> {
+                Map<String, Object> a = req.arguments();
+                return ok(NfseRunner.consultarRegimesEspeciais(
+                    exigirTexto(a, "codigoMunicipio"), exigirTexto(a, "codigoServico"),
+                    dateOrNull(a.get("competencia"), "competencia"), ambiente(a), certificado(a)));
+            }));
+
+        tools.add(tool(jsonMapper, "consultar_retencoes_municipio",
+            "Consulta no ADN as regras de retencao de ISS do municipio (art. 6o da LC 116 e retencoes municipais por servico e responsavel). Somente leitura.",
+            """
+            {"type":"object","required":["codigoMunicipio"],"properties":{
+              "codigoMunicipio":{"type":"string","description":"Codigo IBGE do municipio (7 digitos)."},
+              "competencia":{"type":"string","description":"Data de competencia (YYYY-MM-DD). Padrao: hoje."},
+              "ambiente":{"type":"string","enum":["homologacao","producao"],"default":"homologacao"},
+              "caminhoCertificado":{"type":"string"},"senhaCertificado":{"type":"string"}
+            }}""",
+            (ex, req) -> {
+                Map<String, Object> a = req.arguments();
+                return ok(NfseRunner.consultarRetencoes(
+                    exigirTexto(a, "codigoMunicipio"), dateOrNull(a.get("competencia"), "competencia"),
+                    ambiente(a), certificado(a)));
+            }));
 
         return tools.toArray(new SyncToolSpecification[0]);
     }

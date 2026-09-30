@@ -19,7 +19,8 @@ import java.util.Map;
 
 /**
  * CLI de NFS-e Nacional. Subcomandos: cert, emitir, emitir-de-exemplo, consultar, cancelar, danfse,
- * distribuir-dfe, consultar-dfe.
+ * distribuir-dfe, consultar-dfe e as consultas de parametros municipais do ADN (aliquota,
+ * historico-aliquotas, convenio, beneficio, regimes-especiais, retencoes).
  * Padrao homologacao; producao exige --confirmar-producao. Use --json para saida estavel.
  */
 public final class Cli {
@@ -49,6 +50,17 @@ public final class Cli {
                 case "danfse" -> danfse(a);
                 case "distribuir-dfe" -> distribuirDfe(a);
                 case "consultar-dfe" -> consultarDfe(a);
+                case "aliquota" -> emit(a, NfseRunner.consultarAliquota(
+                    a.required("municipio"), a.required("servico"), a.getDate("competencia"), a.ambiente(), certificado(a)));
+                case "historico-aliquotas" -> emit(a, NfseRunner.consultarHistoricoAliquotas(
+                    a.required("municipio"), a.required("servico"), a.ambiente(), certificado(a)));
+                case "convenio" -> emit(a, NfseRunner.consultarConvenio(a.required("municipio"), a.ambiente(), certificado(a)));
+                case "beneficio" -> emit(a, NfseRunner.consultarBeneficio(
+                    a.required("municipio"), a.required("beneficio"), a.getDate("competencia"), a.ambiente(), certificado(a)));
+                case "regimes-especiais" -> emit(a, NfseRunner.consultarRegimesEspeciais(
+                    a.required("municipio"), a.required("servico"), a.getDate("competencia"), a.ambiente(), certificado(a)));
+                case "retencoes" -> emit(a, NfseRunner.consultarRetencoes(
+                    a.required("municipio"), a.getDate("competencia"), a.ambiente(), certificado(a)));
                 case "help", "-h", "--help" -> usage();
                 default -> {
                     System.err.println("Comando desconhecido: " + command);
@@ -202,6 +214,19 @@ public final class Cli {
                                             Se "concluida" vier false, rode de novo com --nsu ultimoNsu.
               consultar-dfe --nsu N [--cnpj-consulta CNPJ]
                                             Mostra o XML de um documento da distribuicao pelo NSU.
+
+            Parametros municipais do ADN (somente leitura; --competencia YYYY-MM-DD, padrao hoje):
+              aliquota --municipio IBGE --servico 01.01.01.000 [--competencia D]
+                                            Aliquota de ISS do servico no municipio (confira antes de emitir).
+              historico-aliquotas --municipio IBGE --servico COD
+                                            Todas as aliquotas que o servico ja teve, com vigencias.
+              convenio --municipio IBGE     Adesao do municipio ao ambiente/emissor nacional.
+              beneficio --municipio IBGE --beneficio NUM [--competencia D]
+                                            Beneficio fiscal municipal pelo numero.
+              regimes-especiais --municipio IBGE --servico COD [--competencia D]
+                                            Regimes especiais de tributacao aceitos para o servico.
+              retencoes --municipio IBGE [--competencia D]
+                                            Regras de retencao de ISS do municipio.
 
             Opcoes comuns:
               --ambiente homologacao|producao   Padrao: homologacao.
